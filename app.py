@@ -335,6 +335,21 @@ def serve_image(filename):
     """Serve uploaded images"""
     return send_from_directory(IMAGES_DIR, filename)
 
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    """Serve static files"""
+    return send_from_directory('static', filename)
+
+@app.route('/manifest.json')
+def serve_manifest():
+    """Serve PWA manifest"""
+    return send_from_directory('static', 'manifest.json')
+
+@app.route('/favicon.ico')
+def serve_favicon():
+    """Serve favicon"""
+    return send_from_directory('static', 'icon.png', mimetype='image/png')
+
 @app.route('/admin/survey/<survey_id>/results')
 def admin_survey_results(survey_id):
     """View survey results"""

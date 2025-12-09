@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write  # Required for creating tags
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -45,6 +48,10 @@ jobs:
           echo "date=${DATE}" >> $GITHUB_OUTPUT
           echo "📦 Generated version: ${VERSION}"
 
+      - name: Set up QEMU
+        if: steps.check-secrets.outputs.secrets_available == 'true'
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         if: steps.check-secrets.outputs.secrets_available == 'true'
         uses: docker/setup-buildx-action@v3
@@ -61,6 +68,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/survey-kiosk:${{ steps.version.outputs.version }}
@@ -70,11 +78,13 @@ jobs:
 
       - name: Create Git tag
         if: steps.check-secrets.outputs.secrets_available == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a ${{ steps.version.outputs.version }} -m "Release ${{ steps.version.outputs.version }}"
-          git push origin ${{ steps.version.outputs.version }}
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git ${{ steps.version.outputs.version }}
 
       - name: Create release summary
         if: steps.check-secrets.outputs.secrets_available == 'true'
@@ -82,6 +92,8 @@ jobs:
           echo "## 🚀 Release Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** \`${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Platforms:** \`linux/amd64\`, \`linux/arm64\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Docker Images:**" >> $GITHUB_STEP_SUMMARY
           echo "- \`${{ secrets.DOCKER_USERNAME }}/survey-kiosk:${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
