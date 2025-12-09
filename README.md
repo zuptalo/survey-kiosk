@@ -10,6 +10,8 @@ A modern, containerized survey application designed for iPad kiosks. Users selec
 - **Mixed Content**: Support for text-only, image-only, or text+image tiles
 - **Automatic Reset**: After submission, shows thank you message with 10-second countdown before resetting
 - **Touch-Optimized**: Perfect for iPad kiosks with smooth animations and visual feedback
+- **PWA Support**: Installable as Progressive Web App with offline capabilities
+- **Multilingual**: Switch between English and Swedish with flag button
 
 ### Admin Dashboard
 - **Password-Protected**: Secure admin access
@@ -34,6 +36,9 @@ make setup
 
 # Run in development mode with live reload
 make run
+
+# See all available commands
+make help
 ```
 
 **Using Scripts:**
@@ -106,6 +111,30 @@ docker compose up -d
 ```
 
 All survey data, responses, and images will be stored in the mounted `data` directory and persist across container restarts.
+
+### Rebuilding After Code Changes
+
+When you make changes to the code, you need to rebuild the Docker image:
+
+**Using Makefile:**
+```bash
+# Rebuild and restart with fresh image
+make docker-rebuild-run
+
+# Or just rebuild without restarting
+make docker-rebuild
+```
+
+**Using Docker Compose directly:**
+```bash
+# Rebuild and restart
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+
+# Or rebuild without stopping
+docker compose build --no-cache
+```
 
 ## Usage Guide
 
@@ -284,6 +313,33 @@ docker run -e ADMIN_PASSWORD=your-password -p 5000:5000 survey-kiosk
 
 The interface is optimized for standard iPad dimensions (1024px width). The tile grid automatically adjusts based on screen size.
 
+### PWA Installation
+
+The Survey Kiosk can be installed as a Progressive Web App for a native app-like experience:
+
+**On iPad/iOS:**
+1. Open the app in Safari
+2. Tap the Share button
+3. Select "Add to Home Screen"
+4. Tap "Add"
+
+**On Android:**
+1. Open the app in Chrome
+2. Tap the three-dot menu
+3. Select "Add to Home Screen" or "Install app"
+4. Tap "Install"
+
+**On Desktop:**
+1. Open the app in Chrome, Edge, or Safari
+2. Look for the install icon in the address bar
+3. Click "Install"
+
+Once installed, the app will:
+- Launch in fullscreen mode without browser chrome
+- Display the custom icon on your device
+- Work in landscape-primary orientation (ideal for kiosks)
+- Use Dream Dose Cafe colors for theme and splash screen
+
 ## Data Structure
 
 ### Survey Object
@@ -325,6 +381,9 @@ feedback-kiosk/
 ├── requirements.txt          # Python dependencies
 ├── Dockerfile               # Container configuration
 ├── compose.yaml             # Docker Compose setup
+├── static/                  # Static assets
+│   ├── icon.png            # App icon (1024x1024)
+│   └── manifest.json       # PWA manifest
 ├── templates/               # HTML templates
 │   ├── base.html           # Base template with styles
 │   ├── index.html          # Landing page
@@ -333,6 +392,7 @@ feedback-kiosk/
 │   ├── admin_login.html    # Admin login
 │   ├── admin_dashboard.html # Admin home
 │   ├── admin_new_survey.html # Survey creation
+│   ├── admin_edit_survey.html # Survey editing
 │   └── admin_results.html  # Results visualization
 └── data/                    # Data storage (auto-created)
     ├── surveys.json        # Survey definitions
@@ -347,7 +407,10 @@ feedback-kiosk/
 - `GET /surveys` - List all surveys
 - `GET /survey/<id>` - Survey tile grid
 - `POST /api/submit-survey` - Submit selections
-- `GET /images/<filename>` - Serve images
+- `GET /images/<filename>` - Serve uploaded images
+- `GET /static/<filename>` - Serve static files
+- `GET /manifest.json` - PWA manifest
+- `GET /favicon.ico` - Favicon
 
 ### Admin Routes
 - `GET /admin/login` - Admin login
@@ -387,6 +450,10 @@ docker volume inspect feedback-kiosk_survey-data
 
 The project includes GitHub Actions that automatically build and push Docker images on every push to the `main` branch.
 
+**Multi-Architecture Support:**
+- Images are built for both `linux/amd64` (x86_64) and `linux/arm64` (ARM)
+- Works on Intel/AMD servers, Raspberry Pi, Apple Silicon Macs, and ARM-based cloud instances
+
 **Requirements:**
 - `DOCKER_USERNAME` - Docker registry username (GitHub secret)
 - `DOCKER_TOKEN` - Docker registry token/password (GitHub secret)
@@ -400,7 +467,7 @@ If these secrets are not configured, the workflow will skip the Docker build ste
 
 **Using published images:**
 ```bash
-# Pull specific version
+# Pull specific version (automatically selects correct architecture)
 docker pull <username>/survey-kiosk:20251210-1
 
 # Pull latest
@@ -408,6 +475,12 @@ docker pull <username>/survey-kiosk:latest
 
 # Run from registry
 docker run -p 5000:5000 -v ./data:/app/data <username>/survey-kiosk:latest
+```
+
+**Verify architecture:**
+```bash
+# Check which architectures are available
+docker buildx imagetools inspect <username>/survey-kiosk:latest
 ```
 
 ## Requirements

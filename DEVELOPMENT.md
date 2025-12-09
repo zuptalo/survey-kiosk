@@ -259,6 +259,30 @@ docker run -p 5000:5000 -v survey-data:/app/data survey-kiosk
 # Access at http://localhost:5000
 ```
 
+### Rebuilding After Changes
+
+When you make changes and want to test with Docker:
+
+**Quick rebuild with Makefile:**
+```bash
+# Rebuild and restart with fresh image
+make docker-rebuild-run
+
+# Or just rebuild (no restart)
+make docker-rebuild
+```
+
+**Manual rebuild:**
+```bash
+# Stop, rebuild without cache, and restart
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+
+# Or use the --build flag on restart
+docker compose up -d --build --force-recreate
+```
+
 ## Environment Variables
 
 | Variable | Default | Description |

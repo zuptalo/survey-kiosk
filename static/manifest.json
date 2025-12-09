@@ -1,0 +1,18 @@
+{
+  "name": "Survey Kiosk",
+  "short_name": "Survey Kiosk",
+  "description": "Tile-based feedback collection system",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f0e8",
+  "theme_color": "#3d2817",
+  "orientation": "landscape-primary",
+  "icons": [
+    {
+      "src": "/static/icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
