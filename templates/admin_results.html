@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Survey Results - Survey Kiosk{% endblock %}
+
+{% block content %}
+<div class="header">
+    <div>
+        <h1>{{ survey.get('title_en', survey.get('title', 'Untitled')) }}</h1>
+        <p style="color: var(--text-light);">EN: {{ survey.get('description_en', survey.get('description', ''))[:100] }}</p>
+        <p style="color: var(--text-light);">SV: {{ survey.get('description_sv', survey.get('description', ''))[:100] }}</p>
+        <div style="color: var(--text-light); font-size: 14px; margin-top: 15px;">
+            <p><strong>Total Responses:</strong> {{ total_responses }}</p>
+            <p><strong>Created:</strong> {{ survey.created_at[:16].replace('T', ' ') if survey.created_at else 'N/A' }}</p>
+            <p><strong>First Response:</strong> {{ survey.first_response_at[:16].replace('T', ' ') if survey.first_response_at else 'No responses yet' }}</p>
+        </div>
+    </div>
+    <a href="/admin" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+
+{% if total_responses > 0 %}
+    <div style="margin-top: 40px;">
+        <h2 style="margin-bottom: 20px;">Item Selection Statistics</h2>
+        <p style="color: #666; margin-bottom: 20px;">Items are sorted by popularity (most selected first)</p>
+
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px;">#</th>
+                    <th style="width: 100px;">Preview</th>
+                    <th>Item</th>
+                    <th style="width: 100px;">Count</th>
+                    <th style="width: 100px;">Percentage</th>
+                    <th style="width: 40%;">Distribution</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in item_stats %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        {% if item.image %}
+                        <img src="/images/{{ item.image }}" alt="{{ item.text }}" style="max-width: 80px; max-height: 60px; border-radius: 5px; object-fit: cover;">
+                        {% else %}
+                        <span style="color: #999; font-size: 12px;">No image</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.text %}
+                        {{ item.text }}
+                        {% else %}
+                        <em style="color: #999;">Image only</em>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ item.count }}</strong></td>
+                    <td>{{ item.percentage }}%</td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {{ item.percentage }}%;"></div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 5px;">
+            <h3 style="margin-bottom: 10px;">Summary</h3>
+            <p style="color: #666;">Most popular item: <strong>{{ item_stats[0].text if item_stats[0].text else 'Item ' + item_stats[0].id }}</strong> ({{ item_stats[0].count }} selections, {{ item_stats[0].percentage }}%)</p>
+            <p style="color: #666; margin-top: 5px;">Average selections per response: <strong>{{ "%.1f"|format(item_stats|sum(attribute='count') / total_responses) }}</strong></p>
+        </div>
+    </div>
+{% else %}
+<div style="text-align: center; padding: 40px;">
+    <p style="color: #999; font-size: 18px;">No responses received yet.</p>
+    <p style="color: #999; margin-top: 10px;">Share the survey link with participants to start collecting feedback.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Create Survey - Survey Kiosk{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1>Create New Survey</h1>
+    <a href="/admin" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+
+<form id="surveyForm">
+    <h2>English Version</h2>
+    <div class="form-group">
+        <label for="title_en">Survey Title (English)</label>
+        <input type="text" id="title_en" name="title_en" required>
+    </div>
+
+    <div class="form-group">
+        <label for="description_en">Description (English)</label>
+        <textarea id="description_en" name="description_en" required></textarea>
+    </div>
+
+    <h2>Swedish Version</h2>
+    <div class="form-group">
+        <label for="title_sv">Survey Title (Svenska)</label>
+        <input type="text" id="title_sv" name="title_sv" required>
+    </div>
+
+    <div class="form-group">
+        <label for="description_sv">Description (Svenska)</label>
+        <textarea id="description_sv" name="description_sv" required></textarea>
+    </div>
+
+    <h2>Survey Items (Tiles)</h2>
+    <p style="color: var(--text-light); margin-bottom: 20px;">Add items that users can select. Each item can have text, an image, or both.</p>
+
+    <div id="itemsContainer"></div>
+
+    <button type="button" class="btn btn-secondary" onclick="addItem()">Add Item</button>
+
+    <div style="margin-top: 30px;">
+        <button type="submit" class="btn">Create Survey</button>
+        <a href="/admin" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+
+<div id="successMessage" style="display: none;" class="success">
+    Survey created successfully! Redirecting...
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .item-box {
+        border: 2px solid var(--beige);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background: white;
+    }
+
+    .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .item-header h3 {
+        margin: 0;
+        color: var(--dark-brown);
+    }
+
+    .image-preview {
+        max-width: 200px;
+        max-height: 150px;
+        margin-top: 10px;
+        border-radius: 5px;
+        display: none;
+    }
+
+    .image-preview.show {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let itemCount = 0;
+
+    function addItem() {
+        itemCount++;
+        const container = document.getElementById('itemsContainer');
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'item-box';
+        itemDiv.id = `item_${itemCount}`;
+
+        itemDiv.innerHTML = `
+            <div class="item-header">
+                <h3>Item ${itemCount}</h3>
+                <button type="button" class="btn btn-danger" onclick="removeItem(${itemCount})">Remove</button>
+            </div>
+            <div class="form-group">
+                <label>Text (optional)</label>
+                <input type="text" class="item-text" data-item-id="${itemCount}" placeholder="Enter text for this item">
+            </div>
+            <div class="form-group">
+                <label>Image (optional)</label>
+                <input type="file" class="item-image" data-item-id="${itemCount}" accept="image/*" onchange="previewImage(${itemCount})">
+                <img id="preview_${itemCount}" class="image-preview" alt="Preview">
+                <p style="color: var(--text-light); font-size: 12px; margin-top: 5px;">Supported formats: JPG, PNG, GIF</p>
+            </div>
+        `;
+
+        container.appendChild(itemDiv);
+    }
+
+    function removeItem(id) {
+        const element = document.getElementById(`item_${id}`);
+        if (element) {
+            element.remove();
+        }
+    }
+
+    function previewImage(itemId) {
+        const fileInput = document.querySelector(`.item-image[data-item-id="${itemId}"]`);
+        const preview = document.getElementById(`preview_${itemId}`);
+
+        if (fileInput.files && fileInput.files[0]) {
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.classList.add('show');
+            };
+
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+    }
+
+    async function imageToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    document.getElementById('surveyForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const items = [];
+        const itemTextInputs = document.querySelectorAll('.item-text');
+
+        for (const textInput of itemTextInputs) {
+            const itemId = textInput.dataset.itemId;
+            const imageInput = document.querySelector(`.item-image[data-item-id="${itemId}"]`);
+            const text = textInput.value.trim();
+            const imageFile = imageInput.files[0];
+
+            // Skip if both text and image are empty
+            if (!text && !imageFile) {
+                continue;
+            }
+
+            const item = {
+                id: `item_${itemId}`,
+                text: text || ''
+            };
+
+            // Handle image if present
+            if (imageFile) {
+                const base64Image = await imageToBase64(imageFile);
+                const extension = imageFile.name.split('.').pop();
+                const filename = `${Date.now()}_${itemId}.${extension}`;
+
+                item.image = filename;
+                item.imageData = base64Image;
+            }
+
+            items.push(item);
+        }
+
+        if (items.length === 0) {
+            alert('Please add at least one item with text or image');
+            return;
+        }
+
+        const surveyData = {
+            title_en: document.getElementById('title_en').value,
+            title_sv: document.getElementById('title_sv').value,
+            description_en: document.getElementById('description_en').value,
+            description_sv: document.getElementById('description_sv').value,
+            items: items
+        };
+
+        try {
+            const response = await fetch('/admin/survey/new', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(surveyData)
+            });
+
+            if (response.ok) {
+                document.getElementById('surveyForm').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'block';
+
+                setTimeout(() => {
+                    window.location.href = '/admin';
+                }, 1500);
+            }
+        } catch (error) {
+            alert('Error creating survey. Please try again.');
+        }
+    });
+
+    // Add one item by default
+    addItem();
+</script>
+{% endblock %}

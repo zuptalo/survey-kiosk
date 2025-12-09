@@ -1,0 +1,24 @@
+services:
+  survey-kiosk:
+    build: .
+    container_name: survey-kiosk
+    ports:
+      - "5000:5000"
+    volumes:
+      # Option 1: Use Docker volume (recommended for production)
+      - survey-data:/app/data
+
+      # Option 2: Use local directory (uncomment to use)
+      # This allows you to access data directly on your host machine
+      # - ./data:/app/data
+    environment:
+      - FLASK_APP=app.py
+      - PYTHONUNBUFFERED=1
+      # Uncomment and set your own secure password
+      # - ADMIN_PASSWORD=your-secure-password
+      # - SECRET_KEY=your-secret-key-here
+    restart: unless-stopped
+
+volumes:
+  survey-data:
+    driver: local

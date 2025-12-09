@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Survey Kiosk{% endblock %}
+
+{% block content %}
+<div style="text-align: center;">
+    <h1>Welcome to Survey Kiosk</h1>
+    <p style="color: #666; margin: 20px 0;">Please choose an option to continue</p>
+
+    <div class="button-group">
+        <a href="/surveys" class="btn btn-large">Take a Survey</a>
+        <a href="/admin/login" class="btn btn-large btn-secondary">Admin Login</a>
+    </div>
+</div>
+{% endblock %}
