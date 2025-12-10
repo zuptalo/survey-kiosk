@@ -5,7 +5,7 @@ import { surveyService } from '../services/surveyService';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 
 function SurveyForm() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [survey, setSurvey] = useState(null);
@@ -79,6 +79,29 @@ function SurveyForm() {
     }
   };
 
+  const getSurveyTitle = () => {
+    if (!survey) return '';
+    if (i18n.language === 'sv' && survey.title_sv) {
+      return survey.title_sv;
+    }
+    return survey.title_en || survey.title || 'Survey';
+  };
+
+  const getSurveyDescription = () => {
+    if (!survey) return '';
+    if (i18n.language === 'sv' && survey.description_sv) {
+      return survey.description_sv;
+    }
+    return survey.description_en || survey.description || '';
+  };
+
+  const getItemText = (item) => {
+    if (i18n.language === 'sv' && item.text_sv) {
+      return item.text_sv;
+    }
+    return item.text_en || item.text || '';
+  };
+
   if (loading) {
     return (
       <div className="loading">
@@ -119,15 +142,17 @@ function SurveyForm() {
       <LanguageSwitcher />
 
       <div style={styles.header}>
-        <h1 style={styles.title}>{survey.title}</h1>
-        {survey.description && (
-          <p style={styles.description}>{survey.description}</p>
+        <h1 style={styles.title}>{getSurveyTitle()}</h1>
+        {getSurveyDescription() && (
+          <p style={styles.description}>{getSurveyDescription()}</p>
         )}
       </div>
 
       <div style={styles.tileGrid}>
         {survey.items.map((item) => {
           const isSelected = selectedItems.includes(item.id);
+          const itemText = getItemText(item);
+
           return (
             <div
               key={item.id}
@@ -140,14 +165,14 @@ function SurveyForm() {
               {item.image && (
                 <div style={styles.tileImageContainer}>
                   <img
-                    src={item.image}
-                    alt={item.text}
+                    src={`/images/${item.image}`}
+                    alt={itemText}
                     style={styles.tileImage}
                   />
                 </div>
               )}
-              {item.text && (
-                <div style={styles.tileText}>{item.text}</div>
+              {itemText && (
+                <div style={styles.tileText}>{itemText}</div>
               )}
               {isSelected && (
                 <div style={styles.checkmark}>✓</div>

@@ -3,14 +3,16 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { surveyService } from '../services/surveyService';
 import { adminService } from '../services/adminService';
-import { convertImageToBase64, validateImage } from '../utils/imageUtils';
+import { validateImage } from '../utils/imageUtils';
 
 function AdminEditSurvey() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [titleEn, setTitleEn] = useState('');
+  const [titleSv, setTitleSv] = useState('');
+  const [descriptionEn, setDescriptionEn] = useState('');
+  const [descriptionSv, setDescriptionSv] = useState('');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -23,11 +25,17 @@ function AdminEditSurvey() {
   const loadSurvey = async () => {
     try {
       const survey = await surveyService.getSurvey(id);
-      setTitle(survey.title);
-      setDescription(survey.description || '');
+      setTitleEn(survey.title_en || '');
+      setTitleSv(survey.title_sv || '');
+      setDescriptionEn(survey.description_en || '');
+      setDescriptionSv(survey.description_sv || '');
       setItems(survey.items.map(item => ({
         ...item,
-        tempId: Date.now() + Math.random()
+        tempId: Date.now() + Math.random(),
+        text_en: item.text_en || item.text || '',  // Fallback for old data
+        text_sv: item.text_sv || '',
+        imageData: '',
+        imageFilename: item.image || ''
       })));
       setLoading(false);
     } catch (err) {
@@ -40,8 +48,10 @@ function AdminEditSurvey() {
     setItems([...items, {
       id: '',
       tempId: Date.now(),
-      text: '',
-      image: ''
+      text_en: '',
+      text_sv: '',
+      imageData: '',
+      imageFilename: ''
     }]);
   };
 
@@ -53,9 +63,9 @@ function AdminEditSurvey() {
     setItems(items.filter(item => item.tempId !== tempId));
   };
 
-  const updateItemText = (tempId, text) => {
+  const updateItemText = (tempId, field, value) => {
     setItems(items.map(item =>
-      item.tempId === tempId ? { ...item, text } : item
+      item.tempId === tempId ? { ...item, [field]: value } : item
     ));
   };
 
@@ -64,10 +74,22 @@ function AdminEditSurvey() {
 
     try {
       validateImage(file);
-      const base64 = await convertImageToBase64(file);
-      setItems(items.map(item =>
-        item.tempId === tempId ? { ...item, image: base64 } : item
-      ));
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1]; // Remove data:image/...;base64, prefix
+        const timestamp = Date.now();
+        const filename = `${timestamp}_${file.name}`;
+
+        setItems(items.map(item =>
+          item.tempId === tempId ? {
+            ...item,
+            imageData: base64,
+            imageFilename: filename
+          } : item
+        ));
+      };
+      reader.readAsDataURL(file);
     } catch (err) {
       alert(err.message);
     }
@@ -75,7 +97,7 @@ function AdminEditSurvey() {
 
   const removeImage = (tempId) => {
     setItems(items.map(item =>
-      item.tempId === tempId ? { ...item, image: '' } : item
+      item.tempId === tempId ? { ...item, imageData: '', imageFilename: '' } : item
     ));
   };
 
@@ -83,24 +105,35 @@ function AdminEditSurvey() {
     e.preventDefault();
     setError('');
 
-    if (!title.trim()) {
-      setError('Title is required');
+    if (!titleEn.trim() && !titleSv.trim()) {
+      setError('At least one title (EN or SV) is required');
       return;
     }
 
-    const validItems = items.filter(item => item.text.trim() || item.image);
+    const validItems = items.filter(item =>
+      item.text_en.trim() || item.text_sv.trim() || item.imageData || item.imageFilename
+    );
+
     if (validItems.length === 0) {
       setError('At least one item with text or image is required');
       return;
     }
 
     const surveyData = {
-      title: title.trim(),
-      description: description.trim(),
+      title_en: titleEn.trim(),
+      title_sv: titleSv.trim(),
+      description_en: descriptionEn.trim(),
+      description_sv: descriptionSv.trim(),
       items: validItems.map((item, index) => ({
         id: item.id || `item_${index + 1}`,
-        text: item.text.trim(),
-        image: item.image
+        text_en: item.text_en.trim(),
+        text_sv: item.text_sv.trim(),
+        ...(item.imageData ? {
+          imageData: item.imageData,
+          image: item.imageFilename
+        } : item.imageFilename ? {
+          image: item.imageFilename
+        } : {})
       }))
     };
 
@@ -131,24 +164,54 @@ function AdminEditSurvey() {
       {error && <div className="error-message">{error}</div>}
 
       <form onSubmit={handleSubmit} className="card">
-        <div className="form-group">
-          <label className="form-label">{t('survey_title')} *</label>
-          <input
-            type="text"
-            className="form-input"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>Survey Title</h3>
+
+          <div className="form-group">
+            <label className="form-label">Title (English) *</label>
+            <input
+              type="text"
+              className="form-input"
+              value={titleEn}
+              onChange={(e) => setTitleEn(e.target.value)}
+              placeholder="English title"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Title (Swedish)</label>
+            <input
+              type="text"
+              className="form-input"
+              value={titleSv}
+              onChange={(e) => setTitleSv(e.target.value)}
+              placeholder="Svensk titel"
+            />
+          </div>
         </div>
 
-        <div className="form-group">
-          <label className="form-label">{t('survey_description')}</label>
-          <textarea
-            className="form-textarea"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>Description</h3>
+
+          <div className="form-group">
+            <label className="form-label">Description (English)</label>
+            <textarea
+              className="form-textarea"
+              value={descriptionEn}
+              onChange={(e) => setDescriptionEn(e.target.value)}
+              placeholder="English description"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Description (Swedish)</label>
+            <textarea
+              className="form-textarea"
+              value={descriptionSv}
+              onChange={(e) => setDescriptionSv(e.target.value)}
+              placeholder="Svensk beskrivning"
+            />
+          </div>
         </div>
 
         <div style={styles.itemsSection}>
@@ -171,21 +234,37 @@ function AdminEditSurvey() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">{t('item_text')}</label>
+                <label className="form-label">Text (English)</label>
                 <input
                   type="text"
                   className="form-input"
-                  value={item.text}
-                  onChange={(e) => updateItemText(item.tempId, e.target.value)}
+                  value={item.text_en}
+                  onChange={(e) => updateItemText(item.tempId, 'text_en', e.target.value)}
+                  placeholder="English text"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Text (Swedish)</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={item.text_sv}
+                  onChange={(e) => updateItemText(item.tempId, 'text_sv', e.target.value)}
+                  placeholder="Svensk text"
                 />
               </div>
 
               <div className="form-group">
                 <label className="form-label">{t('item_image')}</label>
-                {item.image ? (
+                {item.imageData || item.imageFilename ? (
                   <div>
                     <img
-                      src={item.image}
+                      src={
+                        item.imageData
+                          ? `data:image/png;base64,${item.imageData}`
+                          : `/images/${item.imageFilename}`
+                      }
                       alt="Preview"
                       style={styles.preview}
                     />
@@ -242,6 +321,17 @@ function AdminEditSurvey() {
 }
 
 const styles = {
+  section: {
+    marginBottom: '24px',
+    paddingBottom: '24px',
+    borderBottom: '2px solid var(--beige)',
+  },
+  sectionTitle: {
+    fontSize: '18px',
+    color: 'var(--primary-brown)',
+    marginBottom: '16px',
+    fontWeight: '600',
+  },
   itemsSection: {
     marginTop: '24px',
   },

@@ -4,14 +4,17 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { surveyService } from '../services/surveyService';
 import { adminService } from '../services/adminService';
+import Modal from '../components/Modal';
 
 function AdminDashboard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [surveys, setSurveys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [duplicateModal, setDuplicateModal] = useState({ isOpen: false, surveyId: null });
+  const [newTitle, setNewTitle] = useState('');
 
   useEffect(() => {
     loadSurveys();
@@ -36,7 +39,8 @@ function AdminDashboard() {
   };
 
   const handleDelete = async (id, title) => {
-    if (!window.confirm(`${t('confirm_delete')}\n\n"${title}"`)) {
+    const displayTitle = title || 'this survey';
+    if (!window.confirm(`${t('confirm_delete')}\n\n"${displayTitle}"`)) {
       return;
     }
 
@@ -48,12 +52,25 @@ function AdminDashboard() {
     }
   };
 
-  const handleDuplicate = async (id) => {
-    const newTitle = window.prompt(t('confirm_duplicate'));
-    if (!newTitle) return;
+  const openDuplicateModal = (surveyId) => {
+    setDuplicateModal({ isOpen: true, surveyId });
+    setNewTitle('');
+  };
+
+  const closeDuplicateModal = () => {
+    setDuplicateModal({ isOpen: false, surveyId: null });
+    setNewTitle('');
+  };
+
+  const handleDuplicateSubmit = async () => {
+    if (!newTitle.trim()) {
+      alert('Please enter a title');
+      return;
+    }
 
     try {
-      await adminService.duplicateSurvey(id, newTitle);
+      await adminService.duplicateSurvey(duplicateModal.surveyId, newTitle.trim());
+      closeDuplicateModal();
       await loadSurveys();
     } catch (err) {
       alert(`${t('error')}: ${err.message}`);
@@ -61,7 +78,8 @@ function AdminDashboard() {
   };
 
   const handleReset = async (id, title) => {
-    if (!window.confirm(`${t('confirm_reset')}\n\n"${title}"`)) {
+    const displayTitle = title || 'this survey';
+    if (!window.confirm(`${t('confirm_reset')}\n\n"${displayTitle}"`)) {
       return;
     }
 
@@ -71,6 +89,20 @@ function AdminDashboard() {
     } catch (err) {
       alert(`${t('error')}: ${err.message}`);
     }
+  };
+
+  const getSurveyTitle = (survey) => {
+    if (i18n.language === 'sv' && survey.title_sv) {
+      return survey.title_sv;
+    }
+    return survey.title_en || survey.title || 'Untitled Survey';
+  };
+
+  const getSurveyDescription = (survey) => {
+    if (i18n.language === 'sv' && survey.description_sv) {
+      return survey.description_sv;
+    }
+    return survey.description_en || survey.description || '';
   };
 
   if (loading) {
@@ -113,9 +145,9 @@ function AdminDashboard() {
         ) : (
           surveys.map((survey) => (
             <div key={survey.id} className="card" style={styles.surveyCard}>
-              <h2 style={styles.surveyTitle}>{survey.title}</h2>
-              {survey.description && (
-                <p style={styles.surveyDescription}>{survey.description}</p>
+              <h2 style={styles.surveyTitle}>{getSurveyTitle(survey)}</h2>
+              {getSurveyDescription(survey) && (
+                <p style={styles.surveyDescription}>{getSurveyDescription(survey)}</p>
               )}
               <div style={styles.info}>
                 <span>{survey.items.length} items</span>
@@ -137,21 +169,21 @@ function AdminDashboard() {
                   {t('edit_survey')}
                 </Link>
                 <button
-                  onClick={() => handleDuplicate(survey.id)}
+                  onClick={() => openDuplicateModal(survey.id)}
                   className="btn btn-secondary"
                   style={styles.smallButton}
                 >
                   {t('duplicate_survey')}
                 </button>
                 <button
-                  onClick={() => handleReset(survey.id, survey.title)}
+                  onClick={() => handleReset(survey.id, getSurveyTitle(survey))}
                   className="btn btn-secondary"
                   style={styles.smallButton}
                 >
                   {t('reset_ratings')}
                 </button>
                 <button
-                  onClick={() => handleDelete(survey.id, survey.title)}
+                  onClick={() => handleDelete(survey.id, getSurveyTitle(survey))}
                   className="btn btn-danger"
                   style={styles.smallButton}
                 >
@@ -162,6 +194,36 @@ function AdminDashboard() {
           ))
         )}
       </div>
+
+      <Modal
+        isOpen={duplicateModal.isOpen}
+        onClose={closeDuplicateModal}
+        title={t('duplicate_survey')}
+        actions={
+          <>
+            <button onClick={closeDuplicateModal} className="btn btn-secondary">
+              {t('cancel')}
+            </button>
+            <button onClick={handleDuplicateSubmit} className="btn btn-primary">
+              {t('confirm')}
+            </button>
+          </>
+        }
+      >
+        <div className="form-group">
+          <label className="form-label">
+            {t('confirm_duplicate')}
+          </label>
+          <input
+            type="text"
+            className="form-input"
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            placeholder="Enter new survey title"
+            autoFocus
+          />
+        </div>
+      </Modal>
     </div>
   );
 }

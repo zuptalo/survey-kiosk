@@ -5,7 +5,7 @@ import { surveyService } from '../services/surveyService';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 
 function SurveyList() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [surveys, setSurveys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,6 +25,20 @@ function SurveyList() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getSurveyTitle = (survey) => {
+    if (i18n.language === 'sv' && survey.title_sv) {
+      return survey.title_sv;
+    }
+    return survey.title_en || survey.title || 'Untitled Survey';
+  };
+
+  const getSurveyDescription = (survey) => {
+    if (i18n.language === 'sv' && survey.description_sv) {
+      return survey.description_sv;
+    }
+    return survey.description_en || survey.description || '';
   };
 
   if (loading) {
@@ -63,9 +77,9 @@ function SurveyList() {
               className="card"
               style={styles.surveyCard}
             >
-              <h2 style={styles.surveyTitle}>{survey.title}</h2>
-              {survey.description && (
-                <p style={styles.surveyDescription}>{survey.description}</p>
+              <h2 style={styles.surveyTitle}>{getSurveyTitle(survey)}</h2>
+              {getSurveyDescription(survey) && (
+                <p style={styles.surveyDescription}>{getSurveyDescription(survey)}</p>
               )}
               <div style={styles.badge}>
                 {survey.items.length} {t('items')}
