@@ -273,6 +273,144 @@
         .language-flag:hover {
             transform: scale(1.1);
         }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 20px;
+                border-radius: 8px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            h2 {
+                font-size: 1.2em;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .header > div {
+                width: 100%;
+            }
+
+            .btn {
+                padding: 10px 20px;
+                font-size: 14px;
+                width: 100%;
+                text-align: center;
+            }
+
+            .stats-table {
+                font-size: 14px;
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .stats-table thead {
+                display: none;
+            }
+
+            .stats-table tbody,
+            .stats-table tr,
+            .stats-table td {
+                display: block;
+                width: 100%;
+            }
+
+            .stats-table tr {
+                margin-bottom: 20px;
+                border: 1px solid var(--beige);
+                border-radius: 8px;
+                padding: 15px;
+                background: white;
+            }
+
+            .stats-table td {
+                padding: 8px 0;
+                border: none;
+                text-align: left;
+            }
+
+            .stats-table td::before {
+                content: attr(data-label);
+                font-weight: bold;
+                display: inline-block;
+                width: 100px;
+                color: var(--dark-brown);
+            }
+
+            .stats-table td:first-child::before {
+                content: "#: ";
+            }
+
+            .stats-table td img {
+                max-width: 60px !important;
+                max-height: 45px !important;
+            }
+
+            .progress-bar {
+                width: 100%;
+                margin-top: 5px;
+            }
+
+            .survey-list {
+                padding: 0;
+            }
+
+            .survey-item {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+
+            .survey-item h3 {
+                font-size: 1.1em;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            .button-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            /* Stack survey action buttons on mobile */
+            .survey-item > div[style*="display: grid"] {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.3em;
+            }
+
+            .survey-item h3 {
+                font-size: 1em;
+                word-break: break-word;
+            }
+
+            .btn {
+                padding: 10px 15px;
+                font-size: 13px;
+            }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>

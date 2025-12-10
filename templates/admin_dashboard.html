@@ -25,7 +25,7 @@
             <p><strong>First Response:</strong> {{ survey.first_response_at[:16].replace('T', ' ') if survey.first_response_at else 'No responses yet' }}</p>
             <p><strong>Items:</strong> {{ survey['items']|length }}</p>
         </div>
-        <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+        <div style="margin-top: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
             <a href="/admin/survey/{{ survey.id }}/results" class="btn">View Results</a>
             <a href="/admin/survey/{{ survey.id }}/edit" class="btn btn-secondary">Edit Survey</a>
             <button onclick="duplicateSurvey('{{ survey.id }}', '{{ survey.get('title_en', '') }}', '{{ survey.get('title_sv', '') }}')" class="btn btn-accent">Duplicate</button>

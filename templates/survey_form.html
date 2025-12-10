@@ -332,6 +332,15 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .survey-container {
+                padding: 15px 15px 0 15px;
+                border-radius: 10px;
+            }
+
             .tiles-grid.items-1-4,
             .tiles-grid.items-5-8 {
                 grid-template-columns: repeat(2, 1fr);
@@ -360,17 +369,32 @@
             }
 
             .tile {
-                padding: 15px;
+                padding: 10px;
             }
 
-            .header h1 {
-                font-size: 1.5em;
+            .tile-image {
+                max-width: 100px;
+                height: 70px;
+            }
+
+            .tile-text {
+                font-size: 0.9em;
+            }
+
+            .header p:first-child {
+                font-size: 1em;
+            }
+
+            .header p {
+                font-size: 0.9em;
             }
 
             .language-switcher {
                 width: 50px;
                 height: 50px;
                 font-size: 32px;
+                top: 15px;
+                right: 10px;
             }
 
             .skip-btn {
@@ -388,11 +412,18 @@
             }
 
             .thank-you p {
-                font-size: 1.1em;
+                font-size: 1em;
+                padding: 0 10px;
             }
 
             .submit-section {
-                padding: 15px;
+                padding: 15px 10px;
+                border-radius: 0 0 10px 10px;
+            }
+
+            .btn {
+                padding: 12px 20px;
+                font-size: 16px;
             }
 
             #surveyContent {
