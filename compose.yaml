@@ -1,9 +1,9 @@
 services:
   survey-kiosk:
     build: .
-    container_name: survey-kiosk
+    container_name: survey-kiosk-react
     ports:
-      - "5000:5000"
+      - "3001:3001"
     volumes:
       # Option 1: Use Docker volume (recommended for production)
       - survey-data:/app/data
@@ -12,12 +12,17 @@ services:
       # This allows you to access data directly on your host machine
       # - ./data:/app/data
     environment:
-      - FLASK_APP=app.py
-      - PYTHONUNBUFFERED=1
+      - NODE_ENV=production
       # Uncomment and set your own secure password
       # - ADMIN_PASSWORD=your-secure-password
-      # - SECRET_KEY=your-secret-key-here
+      # - SESSION_SECRET=your-session-secret-here
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
 
 volumes:
   survey-data:
