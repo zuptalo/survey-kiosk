@@ -3,7 +3,7 @@ name: Build and Push Docker Image
 on:
   push:
     branches:
-      - main
+      - react-nodejs-implementation
 
 permissions:
   contents: write  # Required for creating tags
@@ -35,14 +35,14 @@ jobs:
           # Get current date in YYYYMMDD format
           DATE=$(date +%Y%m%d)
 
-          # Count existing tags for today
-          COUNT=$(git tag -l "${DATE}-*" | wc -l)
+          # Count existing tags for today with react- prefix
+          COUNT=$(git tag -l "react-${DATE}-*" | wc -l)
 
           # Increment count
           COUNT=$((COUNT + 1))
 
-          # Create version tag
-          VERSION="${DATE}-${COUNT}"
+          # Create version tag with react- prefix
+          VERSION="react-${DATE}-${COUNT}"
 
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "date=${DATE}" >> $GITHUB_OUTPUT
@@ -72,7 +72,7 @@ jobs:
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/survey-kiosk:${{ steps.version.outputs.version }}
-            ${{ secrets.DOCKER_USERNAME }}/survey-kiosk:latest
+            ${{ secrets.DOCKER_USERNAME }}/survey-kiosk:react-latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -89,15 +89,17 @@ jobs:
       - name: Create release summary
         if: steps.check-secrets.outputs.secrets_available == 'true'
         run: |
-          echo "## 🚀 Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 Release Summary (React + Node.js)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** \`${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Stack:** React 18 + Node.js Express" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Platforms:** \`linux/amd64\`, \`linux/arm64\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Docker Images:**" >> $GITHUB_STEP_SUMMARY
           echo "- \`${{ secrets.DOCKER_USERNAME }}/survey-kiosk:${{ steps.version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`${{ secrets.DOCKER_USERNAME }}/survey-kiosk:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ secrets.DOCKER_USERNAME }}/survey-kiosk:react-latest\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Pull command:**" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
