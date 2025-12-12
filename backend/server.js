@@ -29,32 +29,89 @@ await fs.mkdir(DATA_DIR, { recursive: true });
 await fs.mkdir(IMAGES_DIR, { recursive: true });
 
 // Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+// Allow multiple origins for development (localhost and IP addresses)
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
+// In development, also allow any origin from the local network
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // In development, allow any local network IP
+    if (process.env.NODE_ENV !== 'production') {
+      const localNetworkRegex = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):\d+$/;
+      if (localNetworkRegex.test(origin)) {
+        return callback(null, true);
+      }
+    }
+
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use(session({
   secret: SESSION_SECRET,
-  resave: false,
+  resave: true, // Changed to true to ensure session is always saved
   saveUninitialized: false,
+  name: 'survey.sid',
+  proxy: true, // Trust proxy headers
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    path: '/',
+    domain: undefined // Don't set domain to allow cookies to work on any host
+  },
+  rolling: true, // Reset expiration on every request
+  unset: 'keep' // Keep session even if properties are deleted
 }));
 
 // Serve static files
 app.use('/images', express.static(IMAGES_DIR));
 
+// Debug middleware for development
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    if (req.path.includes('/admin/')) {
+      console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`, {
+        sessionID: req.sessionID,
+        hasAdmin: !!req.session?.admin,
+        origin: req.headers.origin,
+        hasCookie: !!req.headers.cookie
+      });
+    }
+    next();
+  });
+}
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Higher limit in development
+  skip: (req) => {
+    // Skip rate limiting for development
+    if (process.env.NODE_ENV !== 'production') {
+      return true;
+    }
+    return false;
+  }
 });
 app.use(limiter);
 
@@ -96,9 +153,24 @@ async function updateSurveyFirstResponse(surveyId) {
 
 // Auth middleware
 function requireAuth(req, res, next) {
+  if (!req.session) {
+    console.error('Session middleware not working - no session object');
+    return res.status(500).json({ error: 'Session configuration error' });
+  }
+
   if (!req.session.admin) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Unauthorized access attempt:', {
+        sessionID: req.sessionID,
+        hasSession: !!req.session,
+        admin: req.session.admin,
+        cookie: req.headers.cookie,
+        origin: req.headers.origin
+      });
+    }
     return res.status(401).json({ error: 'Unauthorized' });
   }
+
   next();
 }
 
@@ -107,6 +179,14 @@ function requireAuth(req, res, next) {
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Get client configuration
+app.get('/api/config', (req, res) => {
+  res.json({
+    thankYouCountdown: parseInt(process.env.THANK_YOU_COUNTDOWN) || 5,
+    inactivityTimeout: parseInt(process.env.INACTIVITY_TIMEOUT) || 30
+  });
 });
 
 // Get all surveys (public)
@@ -123,10 +203,25 @@ app.get('/api/surveys', async (req, res) => {
 app.get('/api/surveys/:id', async (req, res) => {
   try {
     const surveys = await loadSurveys();
-    const survey = surveys.find(s => s.id === req.params.id);
+    let survey = surveys.find(s => s.id === req.params.id);
     if (!survey) {
       return res.status(404).json({ error: 'Survey not found' });
     }
+
+    // Backward compatibility: convert old format (flat items) to new format (questions)
+    if (survey.items && !survey.questions) {
+      survey = {
+        ...survey,
+        questions: [{
+          id: 'q1',
+          text_en: survey.title_en || '',
+          text_sv: survey.title_sv || '',
+          selection_mode: 'multiple',
+          items: survey.items
+        }]
+      };
+    }
+
     res.json(survey);
   } catch (error) {
     res.status(500).json({ error: 'Failed to load survey' });
@@ -136,18 +231,30 @@ app.get('/api/surveys/:id', async (req, res) => {
 // Submit survey response (public)
 app.post('/api/surveys/:id/submit', async (req, res) => {
   try {
-    const { selectedItems } = req.body;
+    const { selected_items, responses: questionResponses } = req.body;
 
-    if (!selectedItems || !Array.isArray(selectedItems)) {
+    // Support both old format (selected_items) and new format (responses)
+    let responseData;
+    if (questionResponses && Array.isArray(questionResponses)) {
+      // New format: multi-question responses
+      responseData = {
+        survey_id: req.params.id,
+        responses: questionResponses,
+        timestamp: new Date().toISOString()
+      };
+    } else if (selected_items && Array.isArray(selected_items)) {
+      // Old format: backward compatibility
+      responseData = {
+        survey_id: req.params.id,
+        selected_items: selected_items,
+        timestamp: new Date().toISOString()
+      };
+    } else {
       return res.status(400).json({ error: 'Invalid data' });
     }
 
     const responses = await loadResponses();
-    responses.push({
-      survey_id: req.params.id,
-      selected_items: selectedItems,
-      timestamp: new Date().toISOString()
-    });
+    responses.push(responseData);
 
     await saveResponses(responses);
     await updateSurveyFirstResponse(req.params.id);
@@ -163,8 +270,24 @@ app.post('/api/admin/login', (req, res) => {
   const { password } = req.body;
 
   if (password === ADMIN_PASSWORD) {
-    req.session.admin = true;
-    res.json({ success: true });
+    // Regenerate session to prevent session fixation
+    req.session.regenerate((err) => {
+      if (err) {
+        console.error('Session regeneration error:', err);
+        return res.status(500).json({ error: 'Login failed' });
+      }
+
+      req.session.admin = true;
+
+      // Save session explicitly
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+          return res.status(500).json({ error: 'Login failed' });
+        }
+        res.json({ success: true });
+      });
+    });
   } else {
     res.status(401).json({ error: 'Invalid password' });
   }
@@ -172,40 +295,38 @@ app.post('/api/admin/login', (req, res) => {
 
 // Admin logout
 app.post('/api/admin/logout', (req, res) => {
-  req.session.destroy();
-  res.json({ success: true });
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Session destruction error:', err);
+      return res.status(500).json({ error: 'Logout failed' });
+    }
+    res.clearCookie('survey.sid');
+    res.json({ success: true });
+  });
 });
 
 // Check auth status
 app.get('/api/admin/status', (req, res) => {
-  res.json({ authenticated: !!req.session.admin });
+  const isAuthenticated = !!req.session?.admin;
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Auth status check:', {
+      authenticated: isAuthenticated,
+      sessionId: req.sessionID,
+      hasSession: !!req.session
+    });
+  }
+
+  res.json({ authenticated: isAuthenticated });
 });
 
 // Create survey (admin)
 app.post('/api/admin/surveys', requireAuth, async (req, res) => {
   try {
-    const { title_en, title_sv, description_en, description_sv, items } = req.body;
+    const { title_en, title_sv, description_en, description_sv, items, questions } = req.body;
 
     const surveys = await loadSurveys();
     const surveyId = String(surveys.length + 1);
-
-    // Process items and save images
-    const processedItems = [];
-    for (const item of items) {
-      const processedItem = {
-        id: item.id,
-        text: item.text || ''
-      };
-
-      if (item.imageData) {
-        const buffer = Buffer.from(item.imageData, 'base64');
-        const imagePath = path.join(IMAGES_DIR, item.image);
-        await fs.writeFile(imagePath, buffer);
-        processedItem.image = item.image;
-      }
-
-      processedItems.push(processedItem);
-    }
 
     const survey = {
       id: surveyId,
@@ -213,10 +334,63 @@ app.post('/api/admin/surveys', requireAuth, async (req, res) => {
       title_sv,
       description_en,
       description_sv,
-      items: processedItems,
       created_at: new Date().toISOString(),
       first_response_at: null
     };
+
+    // Handle new format (questions) or old format (items)
+    if (questions && Array.isArray(questions)) {
+      // New format: questions with items
+      const processedQuestions = [];
+      for (const question of questions) {
+        const processedItems = [];
+        for (const item of question.items || []) {
+          const processedItem = {
+            id: item.id,
+            text_en: item.text_en || item.text || '',
+            text_sv: item.text_sv || ''
+          };
+
+          if (item.imageData) {
+            const buffer = Buffer.from(item.imageData, 'base64');
+            const imagePath = path.join(IMAGES_DIR, item.image);
+            await fs.writeFile(imagePath, buffer);
+            processedItem.image = item.image;
+          }
+
+          processedItems.push(processedItem);
+        }
+
+        processedQuestions.push({
+          id: question.id,
+          text_en: question.text_en || '',
+          text_sv: question.text_sv || '',
+          selection_mode: question.selection_mode || 'multiple',
+          items: processedItems
+        });
+      }
+      survey.questions = processedQuestions;
+    } else if (items && Array.isArray(items)) {
+      // Old format: backward compatibility
+      const processedItems = [];
+      for (const item of items) {
+        const processedItem = {
+          id: item.id,
+          text_en: item.text_en || item.text || '',
+          text_sv: item.text_sv || ''
+        };
+
+        if (item.imageData) {
+          const buffer = Buffer.from(item.imageData, 'base64');
+          const imagePath = path.join(IMAGES_DIR, item.image);
+          await fs.writeFile(imagePath, buffer);
+          processedItem.image = item.image;
+        }
+
+        processedItems.push(processedItem);
+      }
+      survey.items = processedItems;
+    }
 
     surveys.push(survey);
     await saveSurveys(surveys);
@@ -231,7 +405,14 @@ app.post('/api/admin/surveys', requireAuth, async (req, res) => {
 // Update survey (admin)
 app.put('/api/admin/surveys/:id', requireAuth, async (req, res) => {
   try {
-    const { title_en, title_sv, description_en, description_sv, items } = req.body;
+    if (process.env.NODE_ENV === 'development') {
+      console.log('PUT /admin/surveys/:id - Session before update:', {
+        sessionID: req.sessionID,
+        admin: req.session.admin
+      });
+    }
+
+    const { title_en, title_sv, description_en, description_sv, items, questions } = req.body;
 
     const surveys = await loadSurveys();
     const survey = surveys.find(s => s.id === req.params.id);
@@ -240,35 +421,88 @@ app.put('/api/admin/surveys/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Survey not found' });
     }
 
-    // Process items and save images
-    const processedItems = [];
-    for (const item of items) {
-      const processedItem = {
-        id: item.id,
-        text: item.text || ''
-      };
-
-      if (item.existing_image) {
-        processedItem.image = item.existing_image;
-      }
-
-      if (item.imageData) {
-        const buffer = Buffer.from(item.imageData, 'base64');
-        const imagePath = path.join(IMAGES_DIR, item.image);
-        await fs.writeFile(imagePath, buffer);
-        processedItem.image = item.image;
-      }
-
-      processedItems.push(processedItem);
-    }
-
     survey.title_en = title_en;
     survey.title_sv = title_sv;
     survey.description_en = description_en;
     survey.description_sv = description_sv;
-    survey.items = processedItems;
+
+    // Handle new format (questions) or old format (items)
+    if (questions && Array.isArray(questions)) {
+      // New format: questions with items
+      const processedQuestions = [];
+      for (const question of questions) {
+        const processedItems = [];
+        for (const item of question.items || []) {
+          const processedItem = {
+            id: item.id,
+            text_en: item.text_en || item.text || '',
+            text_sv: item.text_sv || ''
+          };
+
+          if (item.image && !item.imageData) {
+            processedItem.image = item.image;
+          }
+
+          if (item.imageData) {
+            const buffer = Buffer.from(item.imageData, 'base64');
+            const imagePath = path.join(IMAGES_DIR, item.image);
+            await fs.writeFile(imagePath, buffer);
+            processedItem.image = item.image;
+          }
+
+          processedItems.push(processedItem);
+        }
+
+        processedQuestions.push({
+          id: question.id,
+          text_en: question.text_en || '',
+          text_sv: question.text_sv || '',
+          selection_mode: question.selection_mode || 'multiple',
+          items: processedItems
+        });
+      }
+      survey.questions = processedQuestions;
+      // Remove old items array if present
+      delete survey.items;
+    } else if (items && Array.isArray(items)) {
+      // Old format: backward compatibility
+      const processedItems = [];
+      for (const item of items) {
+        const processedItem = {
+          id: item.id,
+          text_en: item.text_en || item.text || '',
+          text_sv: item.text_sv || ''
+        };
+
+        if (item.image && !item.imageData) {
+          processedItem.image = item.image;
+        }
+
+        if (item.imageData) {
+          const buffer = Buffer.from(item.imageData, 'base64');
+          const imagePath = path.join(IMAGES_DIR, item.image);
+          await fs.writeFile(imagePath, buffer);
+          processedItem.image = item.image;
+        }
+
+        processedItems.push(processedItem);
+      }
+      survey.items = processedItems;
+      // Remove questions array if present
+      delete survey.questions;
+    }
 
     await saveSurveys(surveys);
+
+    // Touch the session to ensure it's kept alive
+    req.session.touch();
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('PUT /admin/surveys/:id - Session after update:', {
+        sessionID: req.sessionID,
+        admin: req.session.admin
+      });
+    }
 
     res.json({ success: true });
   } catch (error) {
@@ -326,7 +560,8 @@ app.post('/api/admin/surveys/:id/duplicate', requireAuth, async (req, res) => {
       const item = survey.items[i];
       const newItem = {
         id: `${newSurveyId}_${item.id}`,
-        text: item.text || ''
+        text_en: item.text_en || item.text || '',
+        text_sv: item.text_sv || ''
       };
 
       if (item.image) {
@@ -419,7 +654,8 @@ app.get('/api/admin/surveys/:id/results', requireAuth, async (req, res) => {
 
       return {
         id: item.id,
-        text: item.text || '',
+        text_en: item.text_en || item.text || '',
+        text_sv: item.text_sv || '',
         image: item.image || '',
         count,
         percentage
@@ -429,10 +665,46 @@ app.get('/api/admin/surveys/:id/results', requireAuth, async (req, res) => {
     // Sort by count descending
     itemStats.sort((a, b) => b.count - a.count);
 
+    // Calculate average selections per response
+    const totalSelections = surveyResponses.reduce((sum, r) => sum + r.selected_items.length, 0);
+    const avgSelections = totalResponses > 0 ? totalSelections / totalResponses : 0;
+
+    // Find all items with the highest score (handle ties)
+    const mostSelected = [];
+    if (itemStats.length > 0 && itemStats[0].count > 0) {
+      const highestCount = itemStats[0].count;
+      // Get all items that have the same highest count
+      for (const stat of itemStats) {
+        if (stat.count === highestCount) {
+          mostSelected.push({
+            id: stat.id,
+            text_en: stat.text_en,
+            text_sv: stat.text_sv,
+            image: stat.image,
+            count: stat.count,
+            percentage: stat.percentage
+          });
+        } else {
+          break; // Since items are sorted, we can stop once we find a lower count
+        }
+      }
+    }
+
     res.json({
       survey,
-      itemStats,
-      totalResponses
+      stats: {
+        total_responses: totalResponses,
+        avg_selections: avgSelections,
+        item_stats: itemStats.map(stat => ({
+          item_id: stat.id,
+          text_en: stat.text_en,
+          text_sv: stat.text_sv,
+          image: stat.image,
+          count: stat.count,
+          percentage: stat.percentage
+        })),
+        most_selected: mostSelected.length > 0 ? mostSelected : null
+      }
     });
   } catch (error) {
     console.error(error);

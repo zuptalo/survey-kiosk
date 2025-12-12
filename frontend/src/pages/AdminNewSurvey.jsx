@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useNotification } from '../context/NotificationContext';
 import { adminService } from '../services/adminService';
 import { validateImage } from '../utils/imageUtils';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 function AdminNewSurvey() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { showError, showWarning } = useNotification();
   const [titleEn, setTitleEn] = useState('');
   const [titleSv, setTitleSv] = useState('');
   const [descriptionEn, setDescriptionEn] = useState('');
@@ -33,7 +36,7 @@ function AdminNewSurvey() {
 
   const removeItem = (id) => {
     if (items.length === 1) {
-      alert('Survey must have at least one item');
+      showWarning(t('survey_must_have_item'));
       return;
     }
     setItems(items.filter(item => item.id !== id));
@@ -67,7 +70,7 @@ function AdminNewSurvey() {
       };
       reader.readAsDataURL(file);
     } catch (err) {
-      alert(err.message);
+      showError(err.message);
     }
   };
 
@@ -82,7 +85,7 @@ function AdminNewSurvey() {
     setError('');
 
     if (!titleEn.trim() && !titleSv.trim()) {
-      setError('At least one title (EN or SV) is required');
+      setError(t('at_least_one_title'));
       return;
     }
 
@@ -91,7 +94,7 @@ function AdminNewSurvey() {
     );
 
     if (validItems.length === 0) {
-      setError('At least one item with text or image is required');
+      setError(t('at_least_one_item'));
       return;
     }
 
@@ -123,6 +126,8 @@ function AdminNewSurvey() {
 
   return (
     <div className="container">
+      <LanguageSwitcher />
+
       <div className="page-header">
         <h1 className="page-title">{t('create_new_survey')}</h1>
       </div>
@@ -131,51 +136,51 @@ function AdminNewSurvey() {
 
       <form onSubmit={handleSubmit} className="card">
         <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>Survey Title</h3>
+          <h3 style={styles.sectionTitle}>{t('survey_title_section')}</h3>
 
           <div className="form-group">
-            <label className="form-label">Title (English) *</label>
+            <label className="form-label">{t('title_english')} {t('required_field')}</label>
             <input
               type="text"
               className="form-input"
               value={titleEn}
               onChange={(e) => setTitleEn(e.target.value)}
-              placeholder="English title"
+              placeholder={t('english_title')}
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Title (Swedish)</label>
+            <label className="form-label">{t('title_swedish')}</label>
             <input
               type="text"
               className="form-input"
               value={titleSv}
               onChange={(e) => setTitleSv(e.target.value)}
-              placeholder="Svensk titel"
+              placeholder={t('swedish_title')}
             />
           </div>
         </div>
 
         <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>Description</h3>
+          <h3 style={styles.sectionTitle}>{t('description_section')}</h3>
 
           <div className="form-group">
-            <label className="form-label">Description (English)</label>
+            <label className="form-label">{t('description_english')}</label>
             <textarea
               className="form-textarea"
               value={descriptionEn}
               onChange={(e) => setDescriptionEn(e.target.value)}
-              placeholder="English description"
+              placeholder={t('english_description')}
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Description (Swedish)</label>
+            <label className="form-label">{t('description_swedish')}</label>
             <textarea
               className="form-textarea"
               value={descriptionSv}
               onChange={(e) => setDescriptionSv(e.target.value)}
-              placeholder="Svensk beskrivning"
+              placeholder={t('swedish_description')}
             />
           </div>
         </div>
@@ -186,7 +191,7 @@ function AdminNewSurvey() {
           {items.map((item, index) => (
             <div key={item.id} style={styles.item} className="card">
               <div style={styles.itemHeader}>
-                <h4>Item {index + 1}</h4>
+                <h4>{t('item_number')} {index + 1}</h4>
                 {items.length > 1 && (
                   <button
                     type="button"
@@ -200,24 +205,24 @@ function AdminNewSurvey() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Text (English)</label>
+                <label className="form-label">{t('text_english')}</label>
                 <input
                   type="text"
                   className="form-input"
                   value={item.text_en}
                   onChange={(e) => updateItemText(item.id, 'text_en', e.target.value)}
-                  placeholder="English text"
+                  placeholder={t('english_text')}
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Text (Swedish)</label>
+                <label className="form-label">{t('text_swedish')}</label>
                 <input
                   type="text"
                   className="form-input"
                   value={item.text_sv}
                   onChange={(e) => updateItemText(item.id, 'text_sv', e.target.value)}
-                  placeholder="Svensk text"
+                  placeholder={t('swedish_text')}
                 />
               </div>
 
@@ -227,7 +232,7 @@ function AdminNewSurvey() {
                   <div>
                     <img
                       src={`data:image/png;base64,${item.imageData}`}
-                      alt="Preview"
+                      alt={t('preview')}
                       style={styles.preview}
                     />
                     <button
@@ -236,13 +241,13 @@ function AdminNewSurvey() {
                       className="btn btn-secondary"
                       style={{marginTop: '10px'}}
                     >
-                      Remove Image
+                      {t('remove_image')}
                     </button>
                   </div>
                 ) : (
                   <input
                     type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/gif"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                     onChange={(e) => handleImageUpload(item.id, e.target.files[0])}
                     className="form-input"
                   />
@@ -317,10 +322,13 @@ const styles = {
     fontSize: '14px',
   },
   preview: {
-    maxWidth: '200px',
-    maxHeight: '200px',
-    borderRadius: '8px',
+    width: '100%',
+    maxWidth: '400px',
+    aspectRatio: '16 / 9',
+    objectFit: 'cover',
+    borderRadius: '12px',
     display: 'block',
+    boxShadow: 'var(--shadow-sm)',
   },
   actions: {
     display: 'flex',

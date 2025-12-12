@@ -8,11 +8,11 @@ export const convertImageToBase64 = (file) => {
 };
 
 export const validateImage = (file) => {
-  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
   const maxSize = 5 * 1024 * 1024; // 5MB
 
   if (!validTypes.includes(file.type)) {
-    throw new Error('Invalid image type. Please use JPG, PNG, or GIF.');
+    throw new Error('Invalid image type. Please use JPG, PNG, GIF, or WebP.');
   }
 
   if (file.size > maxSize) {

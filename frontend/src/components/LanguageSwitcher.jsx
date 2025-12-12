@@ -24,23 +24,24 @@ function LanguageSwitcher() {
 const styles = {
   button: {
     position: 'fixed',
-    top: '20px',
-    right: '20px',
-    background: 'var(--cream)',
-    border: '2px solid var(--primary-brown)',
+    bottom: '24px',
+    right: '24px',
+    background: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(10px)',
+    border: '2px solid var(--medium-roast)',
     borderRadius: '50%',
-    width: '60px',
-    height: '60px',
+    width: '64px',
+    height: '64px',
     cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-    transition: 'all 0.3s ease',
+    boxShadow: 'var(--shadow-md)',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
   },
   flag: {
-    fontSize: '30px',
+    fontSize: '32px',
   }
 };
 
