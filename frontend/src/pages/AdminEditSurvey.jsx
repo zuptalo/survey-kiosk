@@ -391,7 +391,7 @@ function AdminEditSurvey() {
               <div className="form-group">
                 <label className="form-label">{t('selection_mode')}</label>
                 <select
-                  className="form-input"
+                  className="form-select"
                   value={question.selection_mode}
                   onChange={(e) => updateQuestionSelectionMode(question.id, e.target.value)}
                 >
