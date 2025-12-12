@@ -6,7 +6,7 @@ FROM node:18-alpine AS frontend-builder
 WORKDIR /app/frontend
 
 # Copy frontend package files
-COPY frontend/package*.json ./
+COPY frontend/package.json frontend/package-lock.json ./
 
 # Install dependencies
 RUN npm ci
@@ -23,10 +23,10 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Copy backend package files
-COPY backend/package*.json ./
+COPY backend/package.json backend/package-lock.json ./
 
 # Install production dependencies only
-RUN npm ci --production
+RUN npm ci --omit=dev
 
 # Copy backend source
 COPY backend/ ./
