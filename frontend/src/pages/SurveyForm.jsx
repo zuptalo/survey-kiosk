@@ -11,7 +11,8 @@ function SurveyForm() {
   const navigate = useNavigate();
   const { showWarning, showError } = useNotification();
   const [survey, setSurvey] = useState(null);
-  const [selectedItems, setSelectedItems] = useState([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState({}); // questionId -> [itemIds]
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -65,7 +66,7 @@ function SurveyForm() {
       window.removeEventListener('touchstart', handleActivity);
       window.removeEventListener('scroll', handleActivity);
     };
-  }, [submitted, loading, config.inactivityTimeout, selectedItems]);
+  }, [submitted, loading, config.inactivityTimeout, answers]);
 
   useEffect(() => {
     if (submitted) {
@@ -103,6 +104,19 @@ function SurveyForm() {
   const loadSurvey = async () => {
     try {
       const data = await surveyService.getSurvey(id);
+
+      // Handle both old format (flat items) and new format (questions array)
+      if (!data.questions || !Array.isArray(data.questions)) {
+        // Old format: convert to single question format
+        data.questions = [{
+          id: 'q1',
+          text_en: '',
+          text_sv: '',
+          selection_mode: 'multiple',
+          items: data.items || []
+        }];
+      }
+
       setSurvey(data);
       setLoading(false);
     } catch (err) {
@@ -112,28 +126,97 @@ function SurveyForm() {
   };
 
   const resetSurvey = () => {
-    setSelectedItems([]);
+    setCurrentQuestionIndex(0);
+    setAnswers({});
     setSubmitted(false);
     setCountdown(config.thankYouCountdown);
   };
 
+  const getCurrentQuestion = () => {
+    if (!survey || !survey.questions) return null;
+    return survey.questions[currentQuestionIndex];
+  };
+
+  const getCurrentSelections = () => {
+    const question = getCurrentQuestion();
+    if (!question) return [];
+    return answers[question.id] || [];
+  };
+
   const toggleItem = (itemId) => {
-    if (selectedItems.includes(itemId)) {
-      setSelectedItems(selectedItems.filter(id => id !== itemId));
+    const question = getCurrentQuestion();
+    if (!question) return;
+
+    const currentSelections = getCurrentSelections();
+
+    if (question.selection_mode === 'single') {
+      // Single select: replace selection
+      setAnswers({
+        ...answers,
+        [question.id]: [itemId]
+      });
     } else {
-      setSelectedItems([...selectedItems, itemId]);
+      // Multiple select: toggle selection
+      if (currentSelections.includes(itemId)) {
+        setAnswers({
+          ...answers,
+          [question.id]: currentSelections.filter(id => id !== itemId)
+        });
+      } else {
+        setAnswers({
+          ...answers,
+          [question.id]: [...currentSelections, itemId]
+        });
+      }
+    }
+  };
+
+  const canGoNext = () => {
+    return currentQuestionIndex < survey.questions.length - 1;
+  };
+
+  const canGoPrevious = () => {
+    return currentQuestionIndex > 0;
+  };
+
+  const handleNext = () => {
+    const currentSelections = getCurrentSelections();
+    if (currentSelections.length === 0) {
+      showWarning(t('please_select_option'));
+      return;
+    }
+
+    if (canGoNext()) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handlePrevious = () => {
+    if (canGoPrevious()) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handleSubmit = async () => {
-    if (selectedItems.length === 0) {
+    const currentSelections = getCurrentSelections();
+    if (currentSelections.length === 0) {
+      showWarning(t('please_select_option'));
+      return;
+    }
+
+    // Collect all answers
+    const allSelectedItems = Object.values(answers).flat();
+
+    if (allSelectedItems.length === 0) {
       showWarning(t('please_select_option'));
       return;
     }
 
     setSubmitting(true);
     try {
-      await surveyService.submitSurvey(id, selectedItems);
+      await surveyService.submitSurvey(id, allSelectedItems);
       setSubmitted(true);
     } catch (err) {
       showError(`${t('error')}: ${err.message}`);
@@ -156,6 +239,14 @@ function SurveyForm() {
       return survey.description_sv;
     }
     return survey.description_en || survey.description || '';
+  };
+
+  const getQuestionText = (question) => {
+    if (!question) return '';
+    if (i18n.language === 'sv' && question.text_sv) {
+      return question.text_sv;
+    }
+    return question.text_en || '';
   };
 
   const getItemText = (item) => {
@@ -200,6 +291,10 @@ function SurveyForm() {
     );
   }
 
+  const currentQuestion = getCurrentQuestion();
+  const currentSelections = getCurrentSelections();
+  const isLastQuestion = currentQuestionIndex === survey.questions.length - 1;
+
   return (
     <div style={styles.container}>
       <LanguageSwitcher />
@@ -218,52 +313,107 @@ function SurveyForm() {
         {getSurveyDescription() && (
           <p style={styles.description}>{getSurveyDescription()}</p>
         )}
-      </div>
 
-      <div style={styles.tileGrid}>
-        {survey.items.map((item) => {
-          const isSelected = selectedItems.includes(item.id);
-          const itemText = getItemText(item);
-
-          return (
-            <div
-              key={item.id}
-              onClick={() => toggleItem(item.id)}
-              style={{
-                ...styles.tile,
-                ...(isSelected ? styles.tileSelected : {})
-              }}
-            >
-              {item.image && (
-                <div style={styles.tileImageContainer}>
-                  <img
-                    src={`/images/${item.image}`}
-                    alt={itemText}
-                    style={styles.tileImage}
-                  />
-                </div>
-              )}
-              {itemText && (
-                <div style={styles.tileText}>{itemText}</div>
-              )}
-              {isSelected && (
-                <div style={styles.checkmark}>✓</div>
-              )}
+        {/* Progress indicator */}
+        {survey.questions.length > 1 && (
+          <div style={styles.progress}>
+            <div style={styles.progressText}>
+              {t('question_number')} {currentQuestionIndex + 1} / {survey.questions.length}
             </div>
-          );
-        })}
+            <div style={styles.progressBar}>
+              <div
+                style={{
+                  ...styles.progressFill,
+                  width: `${((currentQuestionIndex + 1) / survey.questions.length) * 100}%`
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Sticky submit button at bottom */}
+      {/* Current Question */}
+      {currentQuestion && (
+        <div style={styles.questionContainer}>
+          {getQuestionText(currentQuestion) && (
+            <h2 style={styles.questionText}>{getQuestionText(currentQuestion)}</h2>
+          )}
+
+          {currentQuestion.selection_mode === 'single' && (
+            <p style={styles.selectionHint}>{t('single_select')}</p>
+          )}
+
+          <div style={styles.tileGrid}>
+            {currentQuestion.items.map((item) => {
+              const isSelected = currentSelections.includes(item.id);
+              const itemText = getItemText(item);
+
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => toggleItem(item.id)}
+                  style={{
+                    ...styles.tile,
+                    ...(isSelected ? styles.tileSelected : {})
+                  }}
+                >
+                  {item.image && (
+                    <div style={styles.tileImageContainer}>
+                      <img
+                        src={`/images/${item.image}`}
+                        alt={itemText}
+                        style={styles.tileImage}
+                      />
+                    </div>
+                  )}
+                  {itemText && (
+                    <div style={styles.tileText}>{itemText}</div>
+                  )}
+                  {isSelected && (
+                    <div style={styles.checkmark}>✓</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Navigation footer */}
       <div style={styles.stickyFooter}>
-        <button
-          onClick={handleSubmit}
-          className="btn btn-primary"
-          style={styles.submitButton}
-          disabled={submitting || selectedItems.length === 0}
-        >
-          {submitting ? t('loading') : `${t('submit')} (${selectedItems.length})`}
-        </button>
+        <div style={styles.footerContent}>
+          {canGoPrevious() && (
+            <button
+              onClick={handlePrevious}
+              className="btn btn-secondary"
+              style={styles.navButton}
+            >
+              ← {t('previous')}
+            </button>
+          )}
+
+          <div style={styles.spacer} />
+
+          {canGoNext() ? (
+            <button
+              onClick={handleNext}
+              className="btn btn-primary"
+              style={styles.navButton}
+              disabled={currentSelections.length === 0}
+            >
+              {t('next')} →
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              className="btn btn-primary"
+              style={styles.submitButton}
+              disabled={submitting || currentSelections.length === 0}
+            >
+              {submitting ? t('loading') : t('submit')}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -315,7 +465,7 @@ const styles = {
     border: '1px solid rgba(255, 255, 255, 0.6)',
   },
   title: {
-    fontSize: '2rem', // Matching global .page-title
+    fontSize: '2rem',
     color: 'var(--espresso)',
     marginBottom: '12px',
     fontFamily: "'Poppins', sans-serif",
@@ -323,16 +473,56 @@ const styles = {
     letterSpacing: '-0.02em',
   },
   description: {
-    fontSize: '1.125rem', // Matching global .page-subtitle
+    fontSize: '1.125rem',
     color: 'var(--text-secondary)',
     fontFamily: "'Inter', sans-serif",
+    marginBottom: '16px',
+  },
+  progress: {
+    marginTop: '24px',
+  },
+  progressText: {
+    fontSize: '16px',
+    color: 'var(--text-secondary)',
+    marginBottom: '12px',
+    fontWeight: '600',
+  },
+  progressBar: {
+    width: '100%',
+    height: '8px',
+    background: 'rgba(232, 220, 200, 0.5)',
+    borderRadius: '4px',
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    background: 'var(--gradient-coffee)',
+    transition: 'width 0.3s ease',
+    borderRadius: '4px',
+  },
+  questionContainer: {
+    maxWidth: '1200px',
+    margin: '0 auto 24px auto',
+  },
+  questionText: {
+    fontSize: '1.5rem',
+    color: 'var(--espresso)',
+    marginBottom: '12px',
+    textAlign: 'center',
+    fontFamily: "'Poppins', sans-serif",
+    fontWeight: '600',
+  },
+  selectionHint: {
+    fontSize: '14px',
+    color: 'var(--text-secondary)',
+    textAlign: 'center',
+    marginBottom: '24px',
+    fontStyle: 'italic',
   },
   tileGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: '20px',
-    maxWidth: '1200px',
-    margin: '0 auto 24px auto',
   },
   tile: {
     background: 'rgba(255, 255, 255, 0.95)',
@@ -412,15 +602,29 @@ const styles = {
     backdropFilter: 'blur(10px)',
     borderTop: '2px solid rgba(232, 220, 200, 0.5)',
     padding: '20px',
-    display: 'flex',
-    justifyContent: 'center',
     zIndex: 998,
     boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.1)',
   },
+  footerContent: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '16px',
+  },
+  spacer: {
+    flex: 1,
+  },
+  navButton: {
+    fontSize: '18px',
+    padding: '14px 32px',
+    minWidth: '140px',
+  },
   submitButton: {
     fontSize: '20px',
-    padding: '18px 48px',
-    minWidth: '280px',
+    padding: '16px 48px',
+    minWidth: '200px',
   },
   thankYouContainer: {
     minHeight: '100vh',
