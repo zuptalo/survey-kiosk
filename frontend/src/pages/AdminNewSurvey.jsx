@@ -14,41 +14,107 @@ function AdminNewSurvey() {
   const [titleSv, setTitleSv] = useState('');
   const [descriptionEn, setDescriptionEn] = useState('');
   const [descriptionSv, setDescriptionSv] = useState('');
-  const [items, setItems] = useState([{
-    id: Date.now(),
+  const [questions, setQuestions] = useState([{
+    id: `q_${Date.now()}`,
     text_en: '',
     text_sv: '',
-    imageData: '',
-    imageFilename: ''
-  }]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const addItem = () => {
-    setItems([...items, {
-      id: Date.now(),
+    selection_mode: 'multiple',
+    items: [{
+      id: `item_${Date.now()}`,
       text_en: '',
       text_sv: '',
       imageData: '',
       imageFilename: ''
+    }]
+  }]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const addQuestion = () => {
+    setQuestions([...questions, {
+      id: `q_${Date.now()}`,
+      text_en: '',
+      text_sv: '',
+      selection_mode: 'multiple',
+      items: [{
+        id: `item_${Date.now()}`,
+        text_en: '',
+        text_sv: '',
+        imageData: '',
+        imageFilename: ''
+      }]
     }]);
   };
 
-  const removeItem = (id) => {
-    if (items.length === 1) {
-      showWarning(t('survey_must_have_item'));
+  const removeQuestion = (questionId) => {
+    if (questions.length === 1) {
+      showWarning('Survey must have at least one question');
       return;
     }
-    setItems(items.filter(item => item.id !== id));
+    setQuestions(questions.filter(q => q.id !== questionId));
   };
 
-  const updateItemText = (id, field, value) => {
-    setItems(items.map(item =>
-      item.id === id ? { ...item, [field]: value } : item
+  const updateQuestionText = (questionId, field, value) => {
+    setQuestions(questions.map(q =>
+      q.id === questionId ? { ...q, [field]: value } : q
     ));
   };
 
-  const handleImageUpload = async (id, file) => {
+  const updateQuestionSelectionMode = (questionId, mode) => {
+    setQuestions(questions.map(q =>
+      q.id === questionId ? { ...q, selection_mode: mode } : q
+    ));
+  };
+
+  const addItem = (questionId) => {
+    setQuestions(questions.map(q => {
+      if (q.id === questionId) {
+        return {
+          ...q,
+          items: [...q.items, {
+            id: `item_${Date.now()}`,
+            text_en: '',
+            text_sv: '',
+            imageData: '',
+            imageFilename: ''
+          }]
+        };
+      }
+      return q;
+    }));
+  };
+
+  const removeItem = (questionId, itemId) => {
+    setQuestions(questions.map(q => {
+      if (q.id === questionId) {
+        if (q.items.length === 1) {
+          showWarning(t('survey_must_have_item'));
+          return q;
+        }
+        return {
+          ...q,
+          items: q.items.filter(item => item.id !== itemId)
+        };
+      }
+      return q;
+    }));
+  };
+
+  const updateItemText = (questionId, itemId, field, value) => {
+    setQuestions(questions.map(q => {
+      if (q.id === questionId) {
+        return {
+          ...q,
+          items: q.items.map(item =>
+            item.id === itemId ? { ...item, [field]: value } : item
+          )
+        };
+      }
+      return q;
+    }));
+  };
+
+  const handleImageUpload = async (questionId, itemId, file) => {
     if (!file) return;
 
     try {
@@ -56,17 +122,25 @@ function AdminNewSurvey() {
 
       const reader = new FileReader();
       reader.onload = () => {
-        const base64 = reader.result.split(',')[1]; // Remove data:image/...;base64, prefix
+        const base64 = reader.result.split(',')[1];
         const timestamp = Date.now();
         const filename = `${timestamp}_${file.name}`;
 
-        setItems(items.map(item =>
-          item.id === id ? {
-            ...item,
-            imageData: base64,
-            imageFilename: filename
-          } : item
-        ));
+        setQuestions(questions.map(q => {
+          if (q.id === questionId) {
+            return {
+              ...q,
+              items: q.items.map(item =>
+                item.id === itemId ? {
+                  ...item,
+                  imageData: base64,
+                  imageFilename: filename
+                } : item
+              )
+            };
+          }
+          return q;
+        }));
       };
       reader.readAsDataURL(file);
     } catch (err) {
@@ -74,10 +148,18 @@ function AdminNewSurvey() {
     }
   };
 
-  const removeImage = (id) => {
-    setItems(items.map(item =>
-      item.id === id ? { ...item, imageData: '', imageFilename: '' } : item
-    ));
+  const removeImage = (questionId, itemId) => {
+    setQuestions(questions.map(q => {
+      if (q.id === questionId) {
+        return {
+          ...q,
+          items: q.items.map(item =>
+            item.id === itemId ? { ...item, imageData: '', imageFilename: '' } : item
+          )
+        };
+      }
+      return q;
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -89,12 +171,16 @@ function AdminNewSurvey() {
       return;
     }
 
-    const validItems = items.filter(item =>
-      item.text_en.trim() || item.text_sv.trim() || item.imageData
-    );
+    // Validate that each question has at least one valid item
+    const validatedQuestions = questions.filter(q => {
+      const validItems = q.items.filter(item =>
+        item.text_en.trim() || item.text_sv.trim() || item.imageData
+      );
+      return validItems.length > 0;
+    });
 
-    if (validItems.length === 0) {
-      setError(t('at_least_one_item'));
+    if (validatedQuestions.length === 0) {
+      setError('At least one question with valid items is required');
       return;
     }
 
@@ -103,14 +189,22 @@ function AdminNewSurvey() {
       title_sv: titleSv.trim(),
       description_en: descriptionEn.trim(),
       description_sv: descriptionSv.trim(),
-      items: validItems.map((item, index) => ({
-        id: `item_${index + 1}`,
-        text_en: item.text_en.trim(),
-        text_sv: item.text_sv.trim(),
-        ...(item.imageData && {
-          imageData: item.imageData,
-          image: item.imageFilename
-        })
+      questions: validatedQuestions.map((question, qIndex) => ({
+        id: `q${qIndex + 1}`,
+        text_en: question.text_en.trim(),
+        text_sv: question.text_sv.trim(),
+        selection_mode: question.selection_mode,
+        items: question.items
+          .filter(item => item.text_en.trim() || item.text_sv.trim() || item.imageData)
+          .map((item, iIndex) => ({
+            id: `q${qIndex + 1}_item_${iIndex + 1}`,
+            text_en: item.text_en.trim(),
+            text_sv: item.text_sv.trim(),
+            ...(item.imageData && {
+              imageData: item.imageData,
+              image: item.imageFilename
+            })
+          }))
       }))
     };
 
@@ -185,89 +279,155 @@ function AdminNewSurvey() {
           </div>
         </div>
 
-        <div style={styles.itemsSection}>
-          <h3 style={styles.itemsTitle}>{t('items')}</h3>
+        <div style={styles.questionsSection}>
+          <h3 style={styles.sectionTitle}>{t('survey_title_section')} - Questions</h3>
 
-          {items.map((item, index) => (
-            <div key={item.id} style={styles.item} className="card">
-              <div style={styles.itemHeader}>
-                <h4>{t('item_number')} {index + 1}</h4>
-                {items.length > 1 && (
+          {questions.map((question, qIndex) => (
+            <div key={question.id} style={styles.questionCard} className="card">
+              <div style={styles.questionHeader}>
+                <h4>{t('question_number')} {qIndex + 1}</h4>
+                {questions.length > 1 && (
                   <button
                     type="button"
-                    onClick={() => removeItem(item.id)}
+                    onClick={() => removeQuestion(question.id)}
                     className="btn btn-danger"
                     style={styles.removeButton}
                   >
-                    {t('remove_item')}
+                    {t('remove_question')}
                   </button>
                 )}
               </div>
 
               <div className="form-group">
-                <label className="form-label">{t('text_english')}</label>
+                <label className="form-label">{t('question_text_english')}</label>
                 <input
                   type="text"
                   className="form-input"
-                  value={item.text_en}
-                  onChange={(e) => updateItemText(item.id, 'text_en', e.target.value)}
+                  value={question.text_en}
+                  onChange={(e) => updateQuestionText(question.id, 'text_en', e.target.value)}
                   placeholder={t('english_text')}
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">{t('text_swedish')}</label>
+                <label className="form-label">{t('question_text_swedish')}</label>
                 <input
                   type="text"
                   className="form-input"
-                  value={item.text_sv}
-                  onChange={(e) => updateItemText(item.id, 'text_sv', e.target.value)}
+                  value={question.text_sv}
+                  onChange={(e) => updateQuestionText(question.id, 'text_sv', e.target.value)}
                   placeholder={t('swedish_text')}
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">{t('item_image')}</label>
-                {item.imageData ? (
-                  <div>
-                    <img
-                      src={`data:image/png;base64,${item.imageData}`}
-                      alt={t('preview')}
-                      style={styles.preview}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(item.id)}
-                      className="btn btn-secondary"
-                      style={{marginTop: '10px'}}
-                    >
-                      {t('remove_image')}
-                    </button>
+                <label className="form-label">{t('selection_mode')}</label>
+                <select
+                  className="form-input"
+                  value={question.selection_mode}
+                  onChange={(e) => updateQuestionSelectionMode(question.id, e.target.value)}
+                >
+                  <option value="multiple">{t('multiple_select')}</option>
+                  <option value="single">{t('single_select')}</option>
+                </select>
+              </div>
+
+              <div style={styles.itemsSection}>
+                <h5 style={styles.itemsTitle}>{t('items')}</h5>
+
+                {question.items.map((item, iIndex) => (
+                  <div key={item.id} style={styles.item} className="card">
+                    <div style={styles.itemHeader}>
+                      <h6>{t('item_number')} {iIndex + 1}</h6>
+                      {question.items.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeItem(question.id, item.id)}
+                          className="btn btn-danger"
+                          style={styles.removeButton}
+                        >
+                          {t('remove_item')}
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">{t('text_english')}</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={item.text_en}
+                        onChange={(e) => updateItemText(question.id, item.id, 'text_en', e.target.value)}
+                        placeholder={t('english_text')}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">{t('text_swedish')}</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={item.text_sv}
+                        onChange={(e) => updateItemText(question.id, item.id, 'text_sv', e.target.value)}
+                        placeholder={t('swedish_text')}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">{t('item_image')}</label>
+                      {item.imageData ? (
+                        <div>
+                          <img
+                            src={`data:image/png;base64,${item.imageData}`}
+                            alt={t('preview')}
+                            style={styles.preview}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(question.id, item.id)}
+                            className="btn btn-secondary"
+                            style={{marginTop: '10px'}}
+                          >
+                            {t('remove_image')}
+                          </button>
+                        </div>
+                      ) : (
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                          onChange={(e) => handleImageUpload(question.id, item.id, e.target.files[0])}
+                          className="form-input"
+                        />
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                    onChange={(e) => handleImageUpload(item.id, e.target.files[0])}
-                    className="form-input"
-                  />
-                )}
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => addItem(question.id)}
+                  className="btn btn-secondary"
+                  style={{marginTop: '12px'}}
+                >
+                  + {t('add_item')}
+                </button>
               </div>
             </div>
           ))}
 
           <button
             type="button"
-            onClick={addItem}
-            className="btn btn-secondary"
+            onClick={addQuestion}
+            className="btn btn-primary"
+            style={{marginTop: '20px'}}
           >
-            + {t('add_item')}
+            + {t('add_question')}
           </button>
         </div>
 
         <div style={styles.actions}>
           <button
-            type="submit"
+            type="button"
             className="btn btn-success"
             disabled={loading}
           >
@@ -299,23 +459,40 @@ const styles = {
     marginBottom: '16px',
     fontWeight: '600',
   },
-  itemsSection: {
+  questionsSection: {
     marginTop: '24px',
   },
-  itemsTitle: {
-    fontSize: '20px',
-    color: 'var(--primary-brown)',
+  questionCard: {
+    marginBottom: '24px',
+    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 247, 242, 0.95) 100%)',
+    padding: '24px',
+  },
+  questionHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: '16px',
   },
+  itemsSection: {
+    marginTop: '20px',
+    paddingTop: '20px',
+    borderTop: '1px solid var(--beige)',
+  },
+  itemsTitle: {
+    fontSize: '16px',
+    color: 'var(--primary-brown)',
+    marginBottom: '12px',
+  },
   item: {
-    marginBottom: '20px',
+    marginBottom: '16px',
     background: 'var(--beige)',
+    padding: '16px',
   },
   itemHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '16px',
+    marginBottom: '12px',
   },
   removeButton: {
     padding: '6px 12px',
