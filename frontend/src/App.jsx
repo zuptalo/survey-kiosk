@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import Home from './pages/Home';
 import SurveyList from './pages/SurveyList';
 import SurveyForm from './pages/SurveyForm';
@@ -12,8 +13,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
-    <AuthProvider>
-      <Routes>
+    <NotificationProvider>
+      <AuthProvider>
+        <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/surveys" element={<SurveyList />} />
         <Route path="/survey/:id" element={<SurveyForm />} />
@@ -50,8 +52,9 @@ function App() {
             </ProtectedRoute>
           }
         />
-      </Routes>
-    </AuthProvider>
+        </Routes>
+      </AuthProvider>
+    </NotificationProvider>
   );
 }
 

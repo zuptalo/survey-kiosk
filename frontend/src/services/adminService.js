@@ -38,10 +38,8 @@ export const adminService = {
   },
 
   // Duplicate survey
-  duplicateSurvey: async (id, newTitle) => {
-    const response = await api.post(`/admin/surveys/${id}/duplicate`, {
-      new_title: newTitle
-    });
+  duplicateSurvey: async (id, titles) => {
+    const response = await api.post(`/admin/surveys/${id}/duplicate`, titles);
     return response.data;
   },
 

@@ -18,6 +18,15 @@ build/
 # Data directory
 data/
 
+# Python (legacy from Flask implementation)
+.venv/
+__pycache__/
+*.py[cod]
+*.so
+.Python
+static/
+templates/
+
 # IDE
 .vscode/
 .idea/
@@ -35,3 +44,4 @@ Thumbs.db
 # Debug
 *.log
 /feedback-kiosk.iml
+/.claude/

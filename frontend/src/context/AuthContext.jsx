@@ -24,6 +24,7 @@ export const AuthProvider = ({ children }) => {
       const data = await adminService.checkStatus();
       setIsAuthenticated(data.authenticated);
     } catch (error) {
+      console.error('Auth check failed:', error);
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
@@ -46,9 +47,11 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await adminService.logout();
-      setIsAuthenticated(false);
     } catch (error) {
       console.error('Logout error:', error);
+    } finally {
+      // Always set to false even if the request fails
+      setIsAuthenticated(false);
     }
   };
 

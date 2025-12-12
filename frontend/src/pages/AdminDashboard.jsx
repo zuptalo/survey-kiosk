@@ -2,19 +2,23 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 import { surveyService } from '../services/surveyService';
 import { adminService } from '../services/adminService';
 import Modal from '../components/Modal';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 function AdminDashboard() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { showConfirm, showSuccess, showError } = useNotification();
   const [surveys, setSurveys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [duplicateModal, setDuplicateModal] = useState({ isOpen: false, surveyId: null });
-  const [newTitle, setNewTitle] = useState('');
+  const [newTitleEn, setNewTitleEn] = useState('');
+  const [newTitleSv, setNewTitleSv] = useState('');
 
   useEffect(() => {
     loadSurveys();
@@ -40,54 +44,73 @@ function AdminDashboard() {
 
   const handleDelete = async (id, title) => {
     const displayTitle = title || 'this survey';
-    if (!window.confirm(`${t('confirm_delete')}\n\n"${displayTitle}"`)) {
-      return;
-    }
+    const confirmed = await showConfirm({
+      title: t('confirm_delete'),
+      message: `"${displayTitle}"`,
+      confirmText: t('delete_survey'),
+      cancelText: t('cancel'),
+      confirmStyle: 'danger'
+    });
+
+    if (!confirmed) return;
 
     try {
       await adminService.deleteSurvey(id);
       await loadSurveys();
+      showSuccess(t('survey_deleted'));
     } catch (err) {
-      alert(`${t('error')}: ${err.message}`);
+      showError(`${t('error')}: ${err.message}`);
     }
   };
 
   const openDuplicateModal = (surveyId) => {
     setDuplicateModal({ isOpen: true, surveyId });
-    setNewTitle('');
+    setNewTitleEn('');
+    setNewTitleSv('');
   };
 
   const closeDuplicateModal = () => {
     setDuplicateModal({ isOpen: false, surveyId: null });
-    setNewTitle('');
+    setNewTitleEn('');
+    setNewTitleSv('');
   };
 
   const handleDuplicateSubmit = async () => {
-    if (!newTitle.trim()) {
-      alert('Please enter a title');
+    if (!newTitleEn.trim() && !newTitleSv.trim()) {
+      showError(t('please_enter_title'));
       return;
     }
 
     try {
-      await adminService.duplicateSurvey(duplicateModal.surveyId, newTitle.trim());
+      await adminService.duplicateSurvey(duplicateModal.surveyId, {
+        new_title_en: newTitleEn.trim(),
+        new_title_sv: newTitleSv.trim()
+      });
       closeDuplicateModal();
       await loadSurveys();
+      showSuccess(t('survey_duplicated'));
     } catch (err) {
-      alert(`${t('error')}: ${err.message}`);
+      showError(`${t('error')}: ${err.message}`);
     }
   };
 
   const handleReset = async (id, title) => {
     const displayTitle = title || 'this survey';
-    if (!window.confirm(`${t('confirm_reset')}\n\n"${displayTitle}"`)) {
-      return;
-    }
+    const confirmed = await showConfirm({
+      title: t('confirm_reset'),
+      message: `"${displayTitle}"\n\n${t('reset_warning')}`,
+      confirmText: t('reset_ratings'),
+      cancelText: t('cancel'),
+      confirmStyle: 'danger'
+    });
+
+    if (!confirmed) return;
 
     try {
       await adminService.resetSurvey(id);
-      alert(t('ratings_reset'));
+      showSuccess(t('ratings_reset'));
     } catch (err) {
-      alert(`${t('error')}: ${err.message}`);
+      showError(`${t('error')}: ${err.message}`);
     }
   };
 
@@ -95,7 +118,7 @@ function AdminDashboard() {
     if (i18n.language === 'sv' && survey.title_sv) {
       return survey.title_sv;
     }
-    return survey.title_en || survey.title || 'Untitled Survey';
+    return survey.title_en || survey.title || t('untitled_survey');
   };
 
   const getSurveyDescription = (survey) => {
@@ -115,10 +138,12 @@ function AdminDashboard() {
 
   return (
     <div className="container">
+      <LanguageSwitcher />
+
       <div className="page-header" style={styles.header}>
         <div>
           <h1 className="page-title">{t('admin_dashboard')}</h1>
-          <p className="page-subtitle">{surveys.length} surveys</p>
+          <p className="page-subtitle">{surveys.length} {t('surveys_count')}</p>
         </div>
         <button onClick={handleLogout} className="btn btn-danger">
           {t('logout')}
@@ -211,16 +236,24 @@ function AdminDashboard() {
         }
       >
         <div className="form-group">
-          <label className="form-label">
-            {t('confirm_duplicate')}
-          </label>
+          <label className="form-label">{t('new_title_english')} *</label>
           <input
             type="text"
             className="form-input"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="Enter new survey title"
+            value={newTitleEn}
+            onChange={(e) => setNewTitleEn(e.target.value)}
+            placeholder={t('enter_new_english_title')}
             autoFocus
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">{t('new_title_swedish')}</label>
+          <input
+            type="text"
+            className="form-input"
+            value={newTitleSv}
+            onChange={(e) => setNewTitleSv(e.target.value)}
+            placeholder={t('enter_new_swedish_title')}
           />
         </div>
       </Modal>
@@ -233,39 +266,45 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    textAlign: 'left', // Override center alignment for dashboard
   },
   actions: {
-    marginBottom: '24px',
+    marginBottom: '28px',
   },
   surveyList: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '20px',
+    gap: '24px',
   },
   surveyCard: {
     position: 'relative',
+    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 247, 242, 0.95) 100%)',
   },
   surveyTitle: {
     fontSize: '24px',
-    color: 'var(--primary-brown)',
-    marginBottom: '8px',
+    color: 'var(--espresso)',
+    marginBottom: '10px',
+    fontFamily: "'Poppins', sans-serif",
+    fontWeight: '600',
   },
   surveyDescription: {
-    color: 'var(--text-light)',
+    color: 'var(--text-secondary)',
     marginBottom: '12px',
+    lineHeight: '1.5',
   },
   info: {
-    color: 'var(--text-light)',
+    color: 'var(--text-secondary)',
     fontSize: '14px',
-    marginBottom: '16px',
+    marginBottom: '18px',
+    fontFamily: "'Inter', sans-serif",
   },
   buttonGroup: {
     display: 'flex',
-    gap: '10px',
+    gap: '12px',
     flexWrap: 'wrap',
   },
   smallButton: {
-    padding: '8px 16px',
+    padding: '10px 18px',
     fontSize: '14px',
   }
 };

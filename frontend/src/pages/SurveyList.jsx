@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { surveyService } from '../services/surveyService';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 
 function SurveyList() {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [surveys, setSurveys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,7 +32,7 @@ function SurveyList() {
     if (i18n.language === 'sv' && survey.title_sv) {
       return survey.title_sv;
     }
-    return survey.title_en || survey.title || 'Untitled Survey';
+    return survey.title_en || survey.title || t('untitled_survey');
   };
 
   const getSurveyDescription = (survey) => {
@@ -50,12 +51,21 @@ function SurveyList() {
   }
 
   return (
-    <div className="container">
+    <div style={styles.container}>
       <LanguageSwitcher />
 
-      <div className="page-header">
-        <h1 className="page-title">{t('available_surveys')}</h1>
-        <p className="page-subtitle">{t('select_survey')}</p>
+      {/* Small close button at top left */}
+      <button
+        onClick={() => navigate('/')}
+        style={styles.closeButton}
+        title={t('back_to_welcome')}
+      >
+        ✕
+      </button>
+
+      <div style={styles.header}>
+        <h1 style={styles.title}>{t('available_surveys')}</h1>
+        <p style={styles.description}>{t('select_survey')}</p>
       </div>
 
       {error && (
@@ -88,50 +98,109 @@ function SurveyList() {
           ))
         )}
       </div>
-
-      <div style={styles.footer}>
-        <Link to="/" className="btn btn-secondary">
-          ← {t('welcome')}
-        </Link>
-      </div>
     </div>
   );
 }
 
 const styles = {
+  container: {
+    minHeight: '100vh',
+    paddingTop: '20px',
+    paddingRight: '20px',
+    paddingBottom: '20px',
+    paddingLeft: '20px',
+  },
+  closeButton: {
+    position: 'fixed',
+    top: '24px',
+    left: '24px',
+    background: 'rgba(255, 255, 255, 0.9)',
+    backdropFilter: 'blur(10px)',
+    border: '2px solid rgba(107, 68, 35, 0.3)',
+    borderRadius: '50%',
+    width: '40px',
+    height: '40px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '24px',
+    color: 'var(--text-secondary)',
+    transition: 'all 0.3s ease',
+    zIndex: 999,
+    boxShadow: 'var(--shadow-sm)',
+  },
+  header: {
+    textAlign: 'center',
+    marginTop: '0',
+    marginRight: 'auto',
+    marginBottom: '32px',
+    marginLeft: 'auto',
+    maxWidth: '1200px',
+    background: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(10px)',
+    paddingTop: '32px',
+    paddingRight: '32px',
+    paddingBottom: '32px',
+    paddingLeft: '32px',
+    borderRadius: '20px',
+    boxShadow: 'var(--shadow-lg)',
+    border: '1px solid rgba(255, 255, 255, 0.6)',
+  },
+  title: {
+    fontSize: '2rem',
+    color: 'var(--espresso)',
+    marginBottom: '12px',
+    fontFamily: "'Poppins', sans-serif",
+    fontWeight: '700',
+    letterSpacing: '-0.02em',
+  },
+  description: {
+    fontSize: '1.125rem',
+    color: 'var(--text-secondary)',
+    fontFamily: "'Inter', sans-serif",
+  },
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-    gap: '20px',
-    marginBottom: '24px',
+    gap: '24px',
+    maxWidth: '1200px',
+    marginTop: '0',
+    marginRight: 'auto',
+    marginBottom: '28px',
+    marginLeft: 'auto',
   },
   surveyCard: {
     textDecoration: 'none',
     color: 'inherit',
-    transition: 'all 0.3s ease',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     cursor: 'pointer',
     display: 'block',
+    position: 'relative',
+    overflow: 'hidden',
   },
   surveyTitle: {
     fontSize: '24px',
-    color: 'var(--primary-brown)',
+    color: 'var(--espresso)',
     marginBottom: '12px',
+    fontFamily: "'Poppins', sans-serif",
+    fontWeight: '600',
   },
   surveyDescription: {
-    color: 'var(--text-light)',
+    color: 'var(--text-secondary)',
     marginBottom: '16px',
+    lineHeight: '1.5',
   },
   badge: {
     display: 'inline-block',
-    background: 'var(--accent-blue)',
-    color: 'white',
-    padding: '6px 12px',
+    background: 'var(--gradient-coffee)',
+    color: 'var(--cream)',
+    padding: '8px 16px',
     borderRadius: '20px',
     fontSize: '14px',
     fontWeight: '600',
-  },
-  footer: {
-    marginTop: '24px',
+    fontFamily: "'Poppins', sans-serif",
+    boxShadow: 'var(--shadow-sm)',
   }
 };
 
