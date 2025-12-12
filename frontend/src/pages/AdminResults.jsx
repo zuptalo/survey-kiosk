@@ -27,6 +27,176 @@ function AdminResults() {
     }
   };
 
+  const getSurveyTitle = () => {
+    if (!results?.survey) return t('untitled_survey');
+    const { survey } = results;
+    if (i18n.language === 'sv' && survey.title_sv) {
+      return survey.title_sv;
+    }
+    return survey.title_en || survey.title || t('untitled_survey');
+  };
+
+  const getSurveyDescription = () => {
+    if (!results?.survey) return '';
+    const { survey } = results;
+    if (i18n.language === 'sv' && survey.description_sv) {
+      return survey.description_sv;
+    }
+    return survey.description_en || survey.description || '';
+  };
+
+  const getQuestionText = (question) => {
+    if (!question) return '';
+    if (i18n.language === 'sv' && question.text_sv) {
+      return question.text_sv;
+    }
+    return question.text_en || '';
+  };
+
+  const getItemText = (item) => {
+    if (i18n.language === 'sv' && item.text_sv) {
+      return item.text_sv;
+    }
+    return item.text_en || item.text || '';
+  };
+
+  const groupStatsByQuestion = () => {
+    if (!results?.survey || !results?.stats) return [];
+
+    const { survey, stats } = results;
+
+    // Check if survey has questions array (new format)
+    if (survey.questions && Array.isArray(survey.questions)) {
+      // Group stats by question
+      return survey.questions.map((question) => {
+        const questionStats = stats.item_stats.filter(stat => {
+          // Match items belonging to this question
+          return question.items.some(item => item.id === stat.item_id);
+        });
+
+        // Find most selected for this question
+        const maxCount = Math.max(...questionStats.map(s => s.count), 0);
+        const mostSelected = maxCount > 0
+          ? questionStats.filter(s => s.count === maxCount)
+          : [];
+
+        return {
+          question,
+          stats: questionStats,
+          mostSelected
+        };
+      });
+    } else {
+      // Old format: single question with flat items
+      return [{
+        question: {
+          id: 'q1',
+          text_en: '',
+          text_sv: '',
+          selection_mode: 'multiple'
+        },
+        stats: stats.item_stats,
+        mostSelected: stats.most_selected || []
+      }];
+    }
+  };
+
+  const renderQuestionResults = (questionData, questionIndex) => {
+    const { question, stats: questionStats, mostSelected } = questionData;
+    const hasQuestionText = getQuestionText(question);
+    const isMultiQuestion = groupStatsByQuestion().length > 1;
+
+    return (
+      <div key={question.id} style={styles.questionSection}>
+        {isMultiQuestion && (
+          <div style={styles.questionHeader}>
+            <h2 style={styles.questionTitle}>
+              {t('question_number')} {questionIndex + 1}
+              {hasQuestionText && `: ${getQuestionText(question)}`}
+            </h2>
+            <div style={styles.selectionModeBadge}>
+              {question.selection_mode === 'single' ? t('single_select') : t('multiple_select')}
+            </div>
+          </div>
+        )}
+
+        {questionStats.length === 0 ? (
+          <p style={styles.noResponses}>{t('no_responses_yet')}</p>
+        ) : (
+          <>
+            <div style={styles.table}>
+              {/* Header */}
+              <div style={styles.tableHeader}>
+                <div style={styles.tableCell}>{t('item')}</div>
+                <div style={styles.tableCell}>{t('selection_count')}</div>
+                <div style={styles.tableCell}>{t('percentage')}</div>
+                <div style={styles.tableCell}>{t('visual')}</div>
+              </div>
+
+              {/* Rows */}
+              {questionStats.map((stat) => {
+                return (
+                  <div key={stat.item_id} style={styles.tableRow}>
+                    <div style={styles.tableCell}>
+                      {stat.image && (
+                        <img
+                          src={`/images/${stat.image}`}
+                          alt=""
+                          style={styles.thumbnail}
+                        />
+                      )}
+                      <span>{getItemText(stat)}</span>
+                    </div>
+                    <div style={styles.tableCell}>{stat.count}</div>
+                    <div style={styles.tableCell}>{stat.percentage.toFixed(1)}%</div>
+                    <div style={styles.tableCell}>
+                      <div style={styles.progressBar}>
+                        <div
+                          style={{
+                            ...styles.progressFill,
+                            width: `${stat.percentage}%`
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {mostSelected && mostSelected.length > 0 && (
+              <div style={styles.mostPopular}>
+                <h3 style={styles.popularTitle}>
+                  {mostSelected.length > 1 ? t('most_popular_tied') : t('most_popular')}
+                </h3>
+                {mostSelected.map((item, index) => (
+                  <div key={item.id || index} style={{
+                    ...styles.popularItem,
+                    ...(index > 0 ? { marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(232, 220, 200, 0.6)' } : {})
+                  }}>
+                    {item.image && (
+                      <img
+                        src={`/images/${item.image}`}
+                        alt=""
+                        style={styles.popularImage}
+                      />
+                    )}
+                    <div>
+                      <div style={styles.popularText}>{getItemText(item)}</div>
+                      <div style={styles.popularStats}>
+                        {item.count} {t('selections')} ({item.percentage.toFixed(1)}%)
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="loading">
@@ -46,28 +216,8 @@ function AdminResults() {
     );
   }
 
-  const { survey, stats } = results;
-
-  const getSurveyTitle = () => {
-    if (i18n.language === 'sv' && survey.title_sv) {
-      return survey.title_sv;
-    }
-    return survey.title_en || survey.title || t('untitled_survey');
-  };
-
-  const getSurveyDescription = () => {
-    if (i18n.language === 'sv' && survey.description_sv) {
-      return survey.description_sv;
-    }
-    return survey.description_en || survey.description || '';
-  };
-
-  const getItemText = (item) => {
-    if (i18n.language === 'sv' && item.text_sv) {
-      return item.text_sv;
-    }
-    return item.text_en || item.text || '';
-  };
+  const { stats } = results;
+  const questionGroups = groupStatsByQuestion();
 
   return (
     <div className="container">
@@ -78,6 +228,7 @@ function AdminResults() {
         {getSurveyDescription() && <p className="page-subtitle">{getSurveyDescription()}</p>}
       </div>
 
+      {/* Overall statistics */}
       <div className="card" style={styles.statsCard}>
         <div style={styles.statGrid}>
           <div style={styles.statBox}>
@@ -88,84 +239,20 @@ function AdminResults() {
             <div style={styles.statLabel}>{t('average_selections')}</div>
             <div style={styles.statValue}>{stats.avg_selections.toFixed(1)}</div>
           </div>
+          {questionGroups.length > 1 && (
+            <div style={styles.statBox}>
+              <div style={styles.statLabel}>{t('total_questions')}</div>
+              <div style={styles.statValue}>{questionGroups.length}</div>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Results by question */}
       <div className="card">
         <h2 style={styles.sectionTitle}>{t('results')}</h2>
-
-        {stats.item_stats.length === 0 ? (
-          <p>{t('no_responses_yet')}</p>
-        ) : (
-          <div style={styles.table}>
-            {/* Header */}
-            <div style={styles.tableHeader}>
-              <div style={styles.tableCell}>{t('item_number')}</div>
-              <div style={styles.tableCell}>{t('selection_count')}</div>
-              <div style={styles.tableCell}>{t('percentage')}</div>
-              <div style={styles.tableCell}>{t('visual')}</div>
-            </div>
-
-            {/* Rows */}
-            {stats.item_stats.map((stat) => {
-              return (
-                <div key={stat.item_id} style={styles.tableRow}>
-                  <div style={styles.tableCell}>
-                    {stat.image && (
-                      <img
-                        src={`/images/${stat.image}`}
-                        alt=""
-                        style={styles.thumbnail}
-                      />
-                    )}
-                    <span>{getItemText(stat)}</span>
-                  </div>
-                  <div style={styles.tableCell}>{stat.count}</div>
-                  <div style={styles.tableCell}>{stat.percentage.toFixed(1)}%</div>
-                  <div style={styles.tableCell}>
-                    <div style={styles.progressBar}>
-                      <div
-                        style={{
-                          ...styles.progressFill,
-                          width: `${stat.percentage}%`
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {questionGroups.map((questionData, index) => renderQuestionResults(questionData, index))}
       </div>
-
-      {stats.most_selected && stats.most_selected.length > 0 && (
-        <div className="card" style={styles.mostPopular}>
-          <h3 style={styles.sectionTitle}>
-            {stats.most_selected.length > 1 ? t('most_popular_tied') : t('most_popular')}
-          </h3>
-          {stats.most_selected.map((item, index) => (
-            <div key={item.id || index} style={{
-              ...styles.popularItem,
-              ...(index > 0 ? { marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(232, 220, 200, 0.6)' } : {})
-            }}>
-              {item.image && (
-                <img
-                  src={`/images/${item.image}`}
-                  alt=""
-                  style={styles.popularImage}
-                />
-              )}
-              <div>
-                <div style={styles.popularText}>{getItemText(item)}</div>
-                <div style={styles.popularStats}>
-                  {item.count} selections ({item.percentage.toFixed(1)}%)
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
 
       <div style={styles.actions}>
         <button onClick={() => navigate('/admin')} className="btn btn-secondary">
@@ -210,13 +297,49 @@ const styles = {
   sectionTitle: {
     fontSize: '20px',
     color: 'var(--espresso)',
-    marginBottom: '16px',
+    marginBottom: '24px',
     fontFamily: "'Poppins', sans-serif",
     fontWeight: '600',
+  },
+  questionSection: {
+    marginBottom: '40px',
+    paddingBottom: '40px',
+    borderBottom: '2px solid rgba(232, 220, 200, 0.3)',
+  },
+  questionHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '24px',
+    flexWrap: 'wrap',
+    gap: '12px',
+  },
+  questionTitle: {
+    fontSize: '20px',
+    color: 'var(--espresso)',
+    fontFamily: "'Poppins', sans-serif",
+    fontWeight: '600',
+    margin: 0,
+  },
+  selectionModeBadge: {
+    padding: '6px 16px',
+    background: 'var(--gradient-warm)',
+    borderRadius: '20px',
+    fontSize: '14px',
+    color: 'var(--text-secondary)',
+    fontWeight: '500',
+    border: '1px solid rgba(232, 220, 200, 0.5)',
+  },
+  noResponses: {
+    color: 'var(--text-secondary)',
+    fontStyle: 'italic',
+    padding: '20px',
+    textAlign: 'center',
   },
   table: {
     display: 'flex',
     flexDirection: 'column',
+    marginBottom: '24px',
   },
   tableHeader: {
     display: 'grid',
@@ -247,7 +370,7 @@ const styles = {
   },
   thumbnail: {
     width: '80px',
-    height: '45px', // 16:9 aspect ratio (80 / 16 * 9 = 45)
+    height: '45px', // 16:9 aspect ratio
     objectFit: 'cover',
     borderRadius: '8px',
     boxShadow: 'var(--shadow-sm)',
@@ -269,7 +392,16 @@ const styles = {
   mostPopular: {
     background: 'var(--gradient-sunset)',
     border: '2px solid var(--accent-warm)',
-    marginTop: '24px',
+    padding: '24px',
+    borderRadius: '16px',
+    marginTop: '20px',
+  },
+  popularTitle: {
+    fontSize: '18px',
+    color: 'var(--espresso)',
+    marginBottom: '16px',
+    fontFamily: "'Poppins', sans-serif",
+    fontWeight: '600',
   },
   popularItem: {
     display: 'flex',
