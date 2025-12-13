@@ -175,7 +175,16 @@ function AdminDashboard() {
                 <p style={styles.surveyDescription}>{getSurveyDescription(survey)}</p>
               )}
               <div style={styles.info}>
-                <span>{survey.items.length} items</span>
+                {survey.questions ? (
+                  <>
+                    <span>{survey.questions.length} {survey.questions.length === 1 ? 'question' : 'questions'}</span>
+                    <span style={{ marginLeft: '12px' }}>
+                      {survey.questions.reduce((total, q) => total + (q.items?.length || 0), 0)} items
+                    </span>
+                  </>
+                ) : (
+                  <span>{survey.items?.length || 0} items</span>
+                )}
               </div>
 
               <div style={styles.buttonGroup}>
