@@ -427,7 +427,7 @@ function AdminNewSurvey() {
 
         <div style={styles.actions}>
           <button
-            type="button"
+            type="submit"
             className="btn btn-success"
             disabled={loading}
           >
