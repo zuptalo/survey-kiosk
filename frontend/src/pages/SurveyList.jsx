@@ -42,6 +42,15 @@ function SurveyList() {
     return survey.description_en || survey.description || '';
   };
 
+  const getItemCount = (survey) => {
+    if (survey.questions && Array.isArray(survey.questions)) {
+      // Multi-question format: count all items across all questions
+      return survey.questions.reduce((total, q) => total + (q.items?.length || 0), 0);
+    }
+    // Old format: flat items array
+    return survey.items?.length || 0;
+  };
+
   if (loading) {
     return (
       <div className="loading">
@@ -92,7 +101,7 @@ function SurveyList() {
                 <p style={styles.surveyDescription}>{getSurveyDescription(survey)}</p>
               )}
               <div style={styles.badge}>
-                {survey.items.length} {t('items')}
+                {getItemCount(survey)} {t('items')}
               </div>
             </Link>
           ))

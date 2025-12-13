@@ -181,8 +181,8 @@ function AdminEditSurvey() {
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = reader.result.split(',')[1];
-        const timestamp = Date.now();
-        const filename = `${timestamp}_${file.name}`;
+        // Backend will generate predictable filename, just pass original name for extension
+        const filename = file.name;
 
         setQuestions(questions.map(q => {
           if (q.id === questionId) {
