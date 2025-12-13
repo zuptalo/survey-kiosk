@@ -90,8 +90,8 @@ function SurveyForm() {
       setWarningCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          // Time's up - reset survey but keep submitted answers
-          resetSurveyKeepAnswers();
+          // Time's up - reset survey completely
+          resetSurvey();
           return 0;
         }
         return prev - 1;
@@ -167,16 +167,6 @@ function SurveyForm() {
     setSurveyStarted(false);
     setShowInactivityWarning(false);
     setWarningCountdown(10);
-  };
-
-  const resetSurveyKeepAnswers = () => {
-    // Reset to initial state but keep answers for backend
-    setCurrentQuestionIndex(0);
-    setSubmitted(false);
-    setSurveyStarted(false);
-    setShowInactivityWarning(false);
-    setWarningCountdown(10);
-    // Note: We don't clear answers - they stay in state for next time
   };
 
   const getCurrentQuestion = () => {
@@ -446,7 +436,7 @@ function SurveyForm() {
               className="btn btn-secondary"
               style={styles.navButton}
             >
-              ← {t('previous')}
+              ←
             </button>
           )}
 
@@ -459,13 +449,13 @@ function SurveyForm() {
               style={styles.navButton}
               disabled={currentSelections.length === 0}
             >
-              {t('next')} →
+              →
             </button>
           ) : (
             <button
               onClick={handleSubmit}
               className="btn btn-primary"
-              style={styles.submitButton}
+              style={styles.navButton}
               disabled={submitting || currentSelections.length === 0}
             >
               {submitting ? t('loading') : t('submit')}
@@ -696,14 +686,13 @@ const styles = {
     flex: 1,
   },
   navButton: {
-    fontSize: '18px',
-    padding: '14px 32px',
-    minWidth: '140px',
-  },
-  submitButton: {
     fontSize: '20px',
-    padding: '16px 48px',
-    minWidth: '200px',
+    padding: '16px 32px',
+    minWidth: '120px',
+    height: '56px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   thankYouContainer: {
     minHeight: '100vh',

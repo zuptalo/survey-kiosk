@@ -25,7 +25,8 @@ const styles = {
   button: {
     position: 'fixed',
     bottom: '24px',
-    right: '24px',
+    left: '50%',
+    transform: 'translateX(-50%)',
     background: 'rgba(255, 255, 255, 0.95)',
     backdropFilter: 'blur(10px)',
     border: '2px solid var(--medium-roast)',
