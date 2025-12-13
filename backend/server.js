@@ -33,38 +33,42 @@ await fs.mkdir(DATA_DIR, { recursive: true });
 await fs.mkdir(IMAGES_DIR, { recursive: true });
 
 // Middleware
-// Allow multiple origins for development (localhost and IP addresses)
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  process.env.FRONTEND_URL
-].filter(Boolean);
+// CORS is only needed in development when frontend runs on a different port
+// In production, frontend is served from the same origin (no CORS needed)
+if (process.env.NODE_ENV !== 'production') {
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    process.env.FRONTEND_URL
+  ].filter(Boolean);
 
-// In development, also allow any origin from the local network
-const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl)
-    if (!origin) return callback(null, true);
+  const corsOptions = {
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
 
-    // Check if origin is in allowed list
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
 
-    // In development, allow any local network IP
-    if (process.env.NODE_ENV !== 'production') {
+      // In development, allow any local network IP
       const localNetworkRegex = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):\d+$/;
       if (localNetworkRegex.test(origin)) {
         return callback(null, true);
       }
-    }
 
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true
-};
+      callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true
+  };
 
-app.use(cors(corsOptions));
+  app.use(cors(corsOptions));
+  console.log('CORS enabled for development');
+} else {
+  // Production: No CORS needed - frontend served from same origin
+  console.log('CORS disabled - serving frontend from same origin');
+}
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
