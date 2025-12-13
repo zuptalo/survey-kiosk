@@ -660,8 +660,22 @@ app.get('/api/admin/surveys/:id/results', requireAuth, async (req, res) => {
 
     const totalResponses = surveyResponses.length;
 
+    // Get all items from survey (handle both old and new formats)
+    let allItems = [];
+    if (survey.questions && Array.isArray(survey.questions)) {
+      // New format: multi-question survey
+      survey.questions.forEach(question => {
+        if (question.items) {
+          allItems = allItems.concat(question.items);
+        }
+      });
+    } else if (survey.items && Array.isArray(survey.items)) {
+      // Old format: flat items array
+      allItems = survey.items;
+    }
+
     // Calculate statistics
-    const itemStats = survey.items.map(item => {
+    const itemStats = allItems.map(item => {
       const count = surveyResponses.filter(r =>
         r.selected_items.includes(item.id)
       ).length;
