@@ -370,10 +370,13 @@ app.post('/api/admin/surveys', requireAuth, async (req, res) => {
           };
 
           if (item.imageData) {
+            // Generate predictable filename: surveyId_questionId_itemId.ext
+            const extension = item.image ? path.extname(item.image) : '.jpg';
+            const newFilename = `${surveyId}_${question.id}_${item.id}${extension}`;
             const buffer = Buffer.from(item.imageData, 'base64');
-            const imagePath = path.join(IMAGES_DIR, item.image);
+            const imagePath = path.join(IMAGES_DIR, newFilename);
             await fs.writeFile(imagePath, buffer);
-            processedItem.image = item.image;
+            processedItem.image = newFilename;
           }
 
           processedItems.push(processedItem);
@@ -399,10 +402,13 @@ app.post('/api/admin/surveys', requireAuth, async (req, res) => {
         };
 
         if (item.imageData) {
+          // Generate predictable filename: surveyId_itemId.ext
+          const extension = item.image ? path.extname(item.image) : '.jpg';
+          const newFilename = `${surveyId}_${item.id}${extension}`;
           const buffer = Buffer.from(item.imageData, 'base64');
-          const imagePath = path.join(IMAGES_DIR, item.image);
+          const imagePath = path.join(IMAGES_DIR, newFilename);
           await fs.writeFile(imagePath, buffer);
-          processedItem.image = item.image;
+          processedItem.image = newFilename;
         }
 
         processedItems.push(processedItem);
@@ -439,12 +445,27 @@ app.put('/api/admin/surveys/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Survey not found' });
     }
 
+    // Collect all existing images before update for cleanup
+    const oldImages = new Set();
+    if (survey.questions && Array.isArray(survey.questions)) {
+      survey.questions.forEach(q => {
+        q.items?.forEach(item => {
+          if (item.image) oldImages.add(item.image);
+        });
+      });
+    } else if (survey.items && Array.isArray(survey.items)) {
+      survey.items.forEach(item => {
+        if (item.image) oldImages.add(item.image);
+      });
+    }
+
     survey.title_en = title_en;
     survey.title_sv = title_sv;
     survey.description_en = description_en;
     survey.description_sv = description_sv;
 
     // Handle new format (questions) or old format (items)
+    const newImages = new Set();
     if (questions && Array.isArray(questions)) {
       // New format: questions with items
       const processedQuestions = [];
@@ -458,14 +479,36 @@ app.put('/api/admin/surveys/:id', requireAuth, async (req, res) => {
           };
 
           if (item.image && !item.imageData) {
+            // Existing image, keep it
             processedItem.image = item.image;
+            newImages.add(item.image);
           }
 
           if (item.imageData) {
+            // New image uploaded - generate predictable filename
+            const extension = item.image ? path.extname(item.image) : '.jpg';
+            const newFilename = `${req.params.id}_${question.id}_${item.id}${extension}`;
+
+            // Delete old images with different extensions for this item
+            const baseName = `${req.params.id}_${question.id}_${item.id}`;
+            const possibleExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+            for (const ext of possibleExtensions) {
+              if (ext !== extension) {
+                const oldPath = path.join(IMAGES_DIR, baseName + ext);
+                try {
+                  await fs.unlink(oldPath);
+                  console.log(`Deleted old image: ${baseName}${ext}`);
+                } catch (error) {
+                  // File might not exist, that's ok
+                }
+              }
+            }
+
             const buffer = Buffer.from(item.imageData, 'base64');
-            const imagePath = path.join(IMAGES_DIR, item.image);
+            const imagePath = path.join(IMAGES_DIR, newFilename);
             await fs.writeFile(imagePath, buffer);
-            processedItem.image = item.image;
+            processedItem.image = newFilename;
+            newImages.add(newFilename);
           }
 
           processedItems.push(processedItem);
@@ -493,14 +536,36 @@ app.put('/api/admin/surveys/:id', requireAuth, async (req, res) => {
         };
 
         if (item.image && !item.imageData) {
+          // Existing image, keep it
           processedItem.image = item.image;
+          newImages.add(item.image);
         }
 
         if (item.imageData) {
+          // New image uploaded - generate predictable filename
+          const extension = item.image ? path.extname(item.image) : '.jpg';
+          const newFilename = `${req.params.id}_${item.id}${extension}`;
+
+          // Delete old images with different extensions for this item
+          const baseName = `${req.params.id}_${item.id}`;
+          const possibleExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+          for (const ext of possibleExtensions) {
+            if (ext !== extension) {
+              const oldPath = path.join(IMAGES_DIR, baseName + ext);
+              try {
+                await fs.unlink(oldPath);
+                console.log(`Deleted old image: ${baseName}${ext}`);
+              } catch (error) {
+                // File might not exist, that's ok
+              }
+            }
+          }
+
           const buffer = Buffer.from(item.imageData, 'base64');
-          const imagePath = path.join(IMAGES_DIR, item.image);
+          const imagePath = path.join(IMAGES_DIR, newFilename);
           await fs.writeFile(imagePath, buffer);
-          processedItem.image = item.image;
+          processedItem.image = newFilename;
+          newImages.add(newFilename);
         }
 
         processedItems.push(processedItem);
@@ -508,6 +573,19 @@ app.put('/api/admin/surveys/:id', requireAuth, async (req, res) => {
       survey.items = processedItems;
       // Remove questions array if present
       delete survey.questions;
+    }
+
+    // Clean up orphaned images (removed questions/items or replaced images)
+    const imagesToDelete = [...oldImages].filter(img => !newImages.has(img));
+    for (const imageFilename of imagesToDelete) {
+      const imagePath = path.join(IMAGES_DIR, imageFilename);
+      try {
+        await fs.unlink(imagePath);
+        console.log(`Cleaned up orphaned image: ${imageFilename}`);
+      } catch (error) {
+        // Image might not exist, continue
+        console.log(`Failed to delete image ${imageFilename}:`, error.message);
+      }
     }
 
     await saveSurveys(surveys);
@@ -536,8 +614,22 @@ app.delete('/api/admin/surveys/:id', requireAuth, async (req, res) => {
     const survey = surveys.find(s => s.id === req.params.id);
 
     if (survey) {
-      // Delete images
-      for (const item of survey.items) {
+      // Delete images (handle both multi-question and old format)
+      let allItems = [];
+      if (survey.questions && Array.isArray(survey.questions)) {
+        // New format: collect items from all questions
+        survey.questions.forEach(question => {
+          if (question.items) {
+            allItems = allItems.concat(question.items);
+          }
+        });
+      } else if (survey.items && Array.isArray(survey.items)) {
+        // Old format: flat items array
+        allItems = survey.items;
+      }
+
+      // Delete all item images
+      for (const item of allItems) {
         if (item.image) {
           const imagePath = path.join(IMAGES_DIR, item.image);
           try {
@@ -572,43 +664,100 @@ app.post('/api/admin/surveys/:id/duplicate', requireAuth, async (req, res) => {
 
     const newSurveyId = String(Math.max(...surveys.map(s => parseInt(s.id))) + 1);
 
-    // Copy items and duplicate images
-    const newItems = [];
-    for (let i = 0; i < survey.items.length; i++) {
-      const item = survey.items[i];
-      const newItem = {
-        id: `${newSurveyId}_${item.id}`,
-        text_en: item.text_en || item.text || '',
-        text_sv: item.text_sv || ''
-      };
+    // Handle both multi-question format and old format
+    let newSurvey;
 
-      if (item.image) {
-        const oldImagePath = path.join(IMAGES_DIR, item.image);
-        const extension = path.extname(item.image);
-        const newImageName = `${newSurveyId}_${i}_${Date.now()}${extension}`;
-        const newImagePath = path.join(IMAGES_DIR, newImageName);
+    if (survey.questions && Array.isArray(survey.questions)) {
+      // New format: multi-question survey
+      const newQuestions = [];
 
-        try {
-          await fs.copyFile(oldImagePath, newImagePath);
-          newItem.image = newImageName;
-        } catch (error) {
-          // Image copy failed, continue without image
+      for (let qIndex = 0; qIndex < survey.questions.length; qIndex++) {
+        const question = survey.questions[qIndex];
+        const newItems = [];
+
+        for (let iIndex = 0; iIndex < question.items.length; iIndex++) {
+          const item = question.items[iIndex];
+          const newItem = {
+            id: `q${qIndex + 1}_item_${iIndex + 1}`,
+            text_en: item.text_en || '',
+            text_sv: item.text_sv || ''
+          };
+
+          if (item.image) {
+            const oldImagePath = path.join(IMAGES_DIR, item.image);
+            const extension = path.extname(item.image);
+            const newImageName = `${newSurveyId}_q${qIndex + 1}_${iIndex}_${Date.now()}${extension}`;
+            const newImagePath = path.join(IMAGES_DIR, newImageName);
+
+            try {
+              await fs.copyFile(oldImagePath, newImagePath);
+              newItem.image = newImageName;
+            } catch (error) {
+              // Image copy failed, continue without image
+            }
+          }
+
+          newItems.push(newItem);
         }
+
+        newQuestions.push({
+          id: `q${qIndex + 1}`,
+          text_en: question.text_en || '',
+          text_sv: question.text_sv || '',
+          selection_mode: question.selection_mode || 'multiple',
+          items: newItems
+        });
       }
 
-      newItems.push(newItem);
-    }
+      newSurvey = {
+        id: newSurveyId,
+        title_en: new_title_en,
+        title_sv: new_title_sv,
+        description_en: survey.description_en,
+        description_sv: survey.description_sv,
+        questions: newQuestions,
+        created_at: new Date().toISOString(),
+        first_response_at: null
+      };
+    } else {
+      // Old format: flat items array
+      const newItems = [];
+      for (let i = 0; i < survey.items.length; i++) {
+        const item = survey.items[i];
+        const newItem = {
+          id: `${newSurveyId}_${item.id}`,
+          text_en: item.text_en || item.text || '',
+          text_sv: item.text_sv || ''
+        };
 
-    const newSurvey = {
-      id: newSurveyId,
-      title_en: new_title_en,
-      title_sv: new_title_sv,
-      description_en: survey.description_en,
-      description_sv: survey.description_sv,
-      items: newItems,
-      created_at: new Date().toISOString(),
-      first_response_at: null
-    };
+        if (item.image) {
+          const oldImagePath = path.join(IMAGES_DIR, item.image);
+          const extension = path.extname(item.image);
+          const newImageName = `${newSurveyId}_${i}_${Date.now()}${extension}`;
+          const newImagePath = path.join(IMAGES_DIR, newImageName);
+
+          try {
+            await fs.copyFile(oldImagePath, newImagePath);
+            newItem.image = newImageName;
+          } catch (error) {
+            // Image copy failed, continue without image
+          }
+        }
+
+        newItems.push(newItem);
+      }
+
+      newSurvey = {
+        id: newSurveyId,
+        title_en: new_title_en,
+        title_sv: new_title_sv,
+        description_en: survey.description_en,
+        description_sv: survey.description_sv,
+        items: newItems,
+        created_at: new Date().toISOString(),
+        first_response_at: null
+      };
+    }
 
     surveys.push(newSurvey);
     await saveSurveys(surveys);
@@ -741,6 +890,193 @@ app.get('/api/admin/surveys/:id/results', requireAuth, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to load results' });
+  }
+});
+
+// Export all surveys (admin)
+app.get('/api/admin/surveys/export', requireAuth, async (req, res) => {
+  try {
+    const surveys = await loadSurveys();
+    const exportData = {
+      version: '1.0',
+      export_date: new Date().toISOString(),
+      surveys: []
+    };
+
+    // Process each survey and include image data
+    for (const survey of surveys) {
+      const exportSurvey = {
+        title_en: survey.title_en,
+        title_sv: survey.title_sv,
+        description_en: survey.description_en,
+        description_sv: survey.description_sv,
+        questions: []
+      };
+
+      // Handle both multi-question and old format
+      if (survey.questions && Array.isArray(survey.questions)) {
+        // New format: multi-question survey
+        for (const question of survey.questions) {
+          const exportQuestion = {
+            text_en: question.text_en || '',
+            text_sv: question.text_sv || '',
+            selection_mode: question.selection_mode || 'multiple',
+            items: []
+          };
+
+          for (const item of question.items) {
+            const exportItem = {
+              text_en: item.text_en || '',
+              text_sv: item.text_sv || ''
+            };
+
+            // Include image as base64 if exists
+            if (item.image) {
+              const imagePath = path.join(IMAGES_DIR, item.image);
+              try {
+                const imageBuffer = await fs.readFile(imagePath);
+                const extension = path.extname(item.image);
+                exportItem.imageData = imageBuffer.toString('base64');
+                exportItem.imageExtension = extension;
+              } catch (error) {
+                console.log(`Failed to read image ${item.image}:`, error.message);
+              }
+            }
+
+            exportQuestion.items.push(exportItem);
+          }
+
+          exportSurvey.questions.push(exportQuestion);
+        }
+      } else if (survey.items && Array.isArray(survey.items)) {
+        // Old format: convert to single question
+        const exportQuestion = {
+          text_en: '',
+          text_sv: '',
+          selection_mode: 'multiple',
+          items: []
+        };
+
+        for (const item of survey.items) {
+          const exportItem = {
+            text_en: item.text_en || item.text || '',
+            text_sv: item.text_sv || ''
+          };
+
+          if (item.image) {
+            const imagePath = path.join(IMAGES_DIR, item.image);
+            try {
+              const imageBuffer = await fs.readFile(imagePath);
+              const extension = path.extname(item.image);
+              exportItem.imageData = imageBuffer.toString('base64');
+              exportItem.imageExtension = extension;
+            } catch (error) {
+              console.log(`Failed to read image ${item.image}:`, error.message);
+            }
+          }
+
+          exportQuestion.items.push(exportItem);
+        }
+
+        exportSurvey.questions.push(exportQuestion);
+      }
+
+      exportData.surveys.push(exportSurvey);
+    }
+
+    // Send as downloadable JSON file
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="surveys-backup-${Date.now()}.json"`);
+    res.json(exportData);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to export surveys' });
+  }
+});
+
+// Import surveys (admin)
+app.post('/api/admin/surveys/import', requireAuth, async (req, res) => {
+  try {
+    const importData = req.body;
+
+    if (!importData.surveys || !Array.isArray(importData.surveys)) {
+      return res.status(400).json({ error: 'Invalid import data format' });
+    }
+
+    const surveys = await loadSurveys();
+    const maxId = surveys.length > 0 ? Math.max(...surveys.map(s => parseInt(s.id))) : 0;
+    let newSurveyId = maxId + 1;
+    const importedSurveys = [];
+
+    for (const importSurvey of importData.surveys) {
+      const surveyId = String(newSurveyId);
+      const newQuestions = [];
+
+      for (let qIndex = 0; qIndex < importSurvey.questions.length; qIndex++) {
+        const question = importSurvey.questions[qIndex];
+        const newItems = [];
+
+        for (let iIndex = 0; iIndex < question.items.length; iIndex++) {
+          const item = question.items[iIndex];
+          const newItem = {
+            id: `q${qIndex + 1}_item_${iIndex + 1}`,
+            text_en: item.text_en || '',
+            text_sv: item.text_sv || ''
+          };
+
+          // Save image if provided
+          if (item.imageData && item.imageExtension) {
+            const extension = item.imageExtension;
+            const newImageName = `${surveyId}_q${qIndex + 1}_q${qIndex + 1}_item_${iIndex + 1}${extension}`;
+            const imagePath = path.join(IMAGES_DIR, newImageName);
+
+            try {
+              const buffer = Buffer.from(item.imageData, 'base64');
+              await fs.writeFile(imagePath, buffer);
+              newItem.image = newImageName;
+            } catch (error) {
+              console.log(`Failed to save image for imported survey:`, error.message);
+            }
+          }
+
+          newItems.push(newItem);
+        }
+
+        newQuestions.push({
+          id: `q${qIndex + 1}`,
+          text_en: question.text_en || '',
+          text_sv: question.text_sv || '',
+          selection_mode: question.selection_mode || 'multiple',
+          items: newItems
+        });
+      }
+
+      const newSurvey = {
+        id: surveyId,
+        title_en: importSurvey.title_en || '',
+        title_sv: importSurvey.title_sv || '',
+        description_en: importSurvey.description_en || '',
+        description_sv: importSurvey.description_sv || '',
+        questions: newQuestions,
+        created_at: new Date().toISOString(),
+        first_response_at: null
+      };
+
+      surveys.push(newSurvey);
+      importedSurveys.push(newSurvey);
+      newSurveyId++;
+    }
+
+    await saveSurveys(surveys);
+
+    res.json({
+      success: true,
+      imported_count: importedSurveys.length,
+      surveys: importedSurveys.map(s => ({ id: s.id, title_en: s.title_en, title_sv: s.title_sv }))
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to import surveys' });
   }
 });
 

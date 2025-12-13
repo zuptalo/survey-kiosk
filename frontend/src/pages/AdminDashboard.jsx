@@ -19,6 +19,7 @@ function AdminDashboard() {
   const [duplicateModal, setDuplicateModal] = useState({ isOpen: false, surveyId: null });
   const [newTitleEn, setNewTitleEn] = useState('');
   const [newTitleSv, setNewTitleSv] = useState('');
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     loadSurveys();
@@ -114,6 +115,49 @@ function AdminDashboard() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const data = await adminService.exportSurveys();
+
+      // Create a downloadable JSON file
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `surveys-backup-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showSuccess(t('surveys_exported'));
+    } catch (err) {
+      showError(`${t('error')}: ${err.message}`);
+    }
+  };
+
+  const handleImport = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const importData = JSON.parse(text);
+
+      const result = await adminService.importSurveys(importData);
+      await loadSurveys();
+
+      showSuccess(`${t('surveys_imported')}: ${result.imported_count} surveys`);
+    } catch (err) {
+      showError(`${t('import_failed')}: ${err.message}`);
+    } finally {
+      setImporting(false);
+      // Reset file input
+      event.target.value = '';
+    }
+  };
+
   const getSurveyTitle = (survey) => {
     if (i18n.language === 'sv' && survey.title_sv) {
       return survey.title_sv;
@@ -160,6 +204,23 @@ function AdminDashboard() {
         <Link to="/admin/survey/new" className="btn btn-success">
           + {t('create_new_survey')}
         </Link>
+
+        <div style={styles.importExportButtons}>
+          <button onClick={handleExport} className="btn btn-secondary">
+            ⬇ {t('export_surveys')}
+          </button>
+
+          <label className="btn btn-secondary" style={{ cursor: 'pointer', margin: 0 }}>
+            ⬆ {importing ? t('importing') : t('import_surveys')}
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleImport}
+              disabled={importing}
+              style={{ display: 'none' }}
+            />
+          </label>
+        </div>
       </div>
 
       <div style={styles.surveyList}>
@@ -279,6 +340,15 @@ const styles = {
   },
   actions: {
     marginBottom: '28px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '12px',
+  },
+  importExportButtons: {
+    display: 'flex',
+    gap: '12px',
   },
   surveyList: {
     display: 'flex',

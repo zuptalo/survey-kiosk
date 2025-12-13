@@ -53,5 +53,17 @@ export const adminService = {
   getSurveyResults: async (id) => {
     const response = await api.get(`/admin/surveys/${id}/results`);
     return response.data;
+  },
+
+  // Export all surveys
+  exportSurveys: async () => {
+    const response = await api.get('/admin/surveys/export');
+    return response.data;
+  },
+
+  // Import surveys
+  importSurveys: async (importData) => {
+    const response = await api.post('/admin/surveys/import', importData);
+    return response.data;
   }
 };

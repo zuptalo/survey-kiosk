@@ -22,6 +22,9 @@ const resources = {
       "thank_you_message": "Your feedback has been recorded",
       "resetting_in": "Resetting in",
       "seconds": "seconds",
+      "are_you_still_there": "Are you still there?",
+      "inactivity_warning_message": "We noticed you haven't interacted with the survey. Do you need more time?",
+      "continue_survey": "Continue Survey",
 
       // Admin
       "admin_dashboard": "Admin Dashboard",
@@ -31,6 +34,8 @@ const resources = {
       "delete_survey": "Delete Survey",
       "duplicate_survey": "Duplicate Survey",
       "reset_ratings": "Reset Ratings",
+      "export_surveys": "Export All Surveys",
+      "import_surveys": "Import Surveys",
       "logout": "Logout",
 
       // Survey form
@@ -47,6 +52,7 @@ const resources = {
 
       // Results
       "total_responses": "Total Responses",
+      "total_questions": "Total Questions",
       "selection_count": "Selection Count",
       "percentage": "Percentage",
       "most_popular": "Most Popular",
@@ -79,6 +85,11 @@ const resources = {
       "survey_deleted": "Survey deleted successfully",
       "ratings_reset": "Ratings reset successfully",
       "survey_duplicated": "Survey duplicated successfully",
+      "surveys_exported": "Surveys exported successfully",
+      "surveys_imported": "Surveys imported successfully",
+      "import_failed": "Import failed",
+      "select_import_file": "Select a backup file to import",
+      "importing": "Importing...",
 
       // Form labels and fields
       "title_english": "Title (English)",
@@ -152,6 +163,9 @@ const resources = {
       "thank_you_message": "Din feedback har registrerats",
       "resetting_in": "Återställs om",
       "seconds": "sekunder",
+      "are_you_still_there": "Är du fortfarande där?",
+      "inactivity_warning_message": "Vi märkte att du inte har interagerat med undersökningen. Behöver du mer tid?",
+      "continue_survey": "Fortsätt undersökning",
 
       // Admin
       "admin_dashboard": "Admin Kontrollpanel",
@@ -161,6 +175,8 @@ const resources = {
       "delete_survey": "Ta bort undersökning",
       "duplicate_survey": "Duplicera undersökning",
       "reset_ratings": "Återställ betyg",
+      "export_surveys": "Exportera alla undersökningar",
+      "import_surveys": "Importera undersökningar",
       "logout": "Logga ut",
 
       // Survey form
@@ -177,6 +193,7 @@ const resources = {
 
       // Results
       "total_responses": "Totalt antal svar",
+      "total_questions": "Totalt antal frågor",
       "selection_count": "Antal val",
       "percentage": "Procent",
       "most_popular": "Mest populära",
@@ -209,6 +226,11 @@ const resources = {
       "survey_deleted": "Undersökning borttagen",
       "ratings_reset": "Betyg återställda",
       "survey_duplicated": "Undersökning duplicerad",
+      "surveys_exported": "Undersökningar exporterade",
+      "surveys_imported": "Undersökningar importerade",
+      "import_failed": "Import misslyckades",
+      "select_import_file": "Välj en säkerhetskopieringsfil att importera",
+      "importing": "Importerar...",
 
       // Form labels and fields
       "title_english": "Titel (Engelska)",

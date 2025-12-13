@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useNotification } from '../context/NotificationContext';
@@ -19,32 +19,42 @@ function SurveyForm() {
   const [countdown, setCountdown] = useState(5);
   const [error, setError] = useState('');
   const [config, setConfig] = useState({ thankYouCountdown: 5, inactivityTimeout: 30 });
-  const [inactivityTimer, setInactivityTimer] = useState(null);
+  const inactivityTimerRef = useRef(null);
+  const [surveyStarted, setSurveyStarted] = useState(false);
+  const [showInactivityWarning, setShowInactivityWarning] = useState(false);
+  const [warningCountdown, setWarningCountdown] = useState(10);
 
   useEffect(() => {
     loadConfig();
     loadSurvey();
   }, [id]);
 
-  // Inactivity timeout - reset to survey page if inactive
+  // Inactivity timeout - show warning after 20s, then reset after 10s more
   useEffect(() => {
-    if (submitted || loading) return; // Don't track during thank you or loading
+    // Don't track during thank you, loading, or before survey started
+    if (submitted || loading || !surveyStarted) return;
+
+    // If warning is showing, don't track activity (let warning countdown run)
+    if (showInactivityWarning) return;
 
     const resetTimer = () => {
-      if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
+      // Clear any existing timer
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
       }
 
-      const timer = setTimeout(() => {
-        // Reset to initial state
-        resetSurvey();
-      }, config.inactivityTimeout * 1000);
-
-      setInactivityTimer(timer);
+      // After 20 seconds of inactivity, show warning
+      inactivityTimerRef.current = setTimeout(() => {
+        setShowInactivityWarning(true);
+        setWarningCountdown(10);
+      }, 20000); // 20 seconds
     };
 
     // Reset timer on any user interaction
-    const handleActivity = () => resetTimer();
+    const handleActivity = () => {
+      resetTimer();
+    };
 
     // Track mouse, keyboard, and touch events
     window.addEventListener('mousemove', handleActivity);
@@ -52,27 +62,51 @@ function SurveyForm() {
     window.addEventListener('keypress', handleActivity);
     window.addEventListener('touchstart', handleActivity);
     window.addEventListener('scroll', handleActivity);
+    window.addEventListener('click', handleActivity);
 
     // Start the initial timer
     resetTimer();
 
     return () => {
-      if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
+      // Cleanup timer and event listeners
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
       }
       window.removeEventListener('mousemove', handleActivity);
       window.removeEventListener('mousedown', handleActivity);
       window.removeEventListener('keypress', handleActivity);
       window.removeEventListener('touchstart', handleActivity);
       window.removeEventListener('scroll', handleActivity);
+      window.removeEventListener('click', handleActivity);
     };
-  }, [submitted, loading, config.inactivityTimeout, answers]);
+  }, [submitted, loading, surveyStarted, showInactivityWarning]);
+
+  // Warning countdown timer
+  useEffect(() => {
+    if (!showInactivityWarning) return;
+
+    const timer = setInterval(() => {
+      setWarningCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          // Time's up - reset survey but keep submitted answers
+          resetSurveyKeepAnswers();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [showInactivityWarning]);
 
   useEffect(() => {
     if (submitted) {
       // Clear inactivity timer when submitted
-      if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
       }
 
       const timer = setInterval(() => {
@@ -88,7 +122,7 @@ function SurveyForm() {
 
       return () => clearInterval(timer);
     }
-  }, [submitted, inactivityTimer]);
+  }, [submitted]);
 
   const loadConfig = async () => {
     try {
@@ -130,6 +164,19 @@ function SurveyForm() {
     setAnswers({});
     setSubmitted(false);
     setCountdown(config.thankYouCountdown);
+    setSurveyStarted(false);
+    setShowInactivityWarning(false);
+    setWarningCountdown(10);
+  };
+
+  const resetSurveyKeepAnswers = () => {
+    // Reset to initial state but keep answers for backend
+    setCurrentQuestionIndex(0);
+    setSubmitted(false);
+    setSurveyStarted(false);
+    setShowInactivityWarning(false);
+    setWarningCountdown(10);
+    // Note: We don't clear answers - they stay in state for next time
   };
 
   const getCurrentQuestion = () => {
@@ -146,6 +193,11 @@ function SurveyForm() {
   const toggleItem = (itemId) => {
     const question = getCurrentQuestion();
     if (!question) return;
+
+    // Start the inactivity timer on first selection
+    if (!surveyStarted) {
+      setSurveyStarted(true);
+    }
 
     const currentSelections = getCurrentSelections();
 
@@ -169,6 +221,12 @@ function SurveyForm() {
         });
       }
     }
+  };
+
+  const handleContinueSurvey = () => {
+    // Dismiss the warning modal
+    setShowInactivityWarning(false);
+    // The useEffect will automatically restart the timer when showInactivityWarning becomes false
   };
 
   const canGoNext = () => {
@@ -415,6 +473,27 @@ function SurveyForm() {
           )}
         </div>
       </div>
+
+      {/* Inactivity Warning Modal */}
+      {showInactivityWarning && (
+        <div style={styles.warningOverlay}>
+          <div style={styles.warningModal}>
+            <h2 style={styles.warningTitle}>{t('are_you_still_there')}</h2>
+            <p style={styles.warningMessage}>{t('inactivity_warning_message')}</p>
+            <div style={styles.warningCountdownContainer}>
+              <div style={styles.warningCountdownNumber}>{warningCountdown}</div>
+              <p style={styles.warningCountdownText}>{t('seconds')}</p>
+            </div>
+            <button
+              onClick={handleContinueSurvey}
+              className="btn btn-primary"
+              style={styles.continueButton}
+            >
+              {t('continue_survey')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -667,6 +746,64 @@ const styles = {
     fontWeight: 'bold',
     color: 'var(--accent-warm)',
     fontFamily: "'Poppins', sans-serif",
+  },
+  warningOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.7)',
+    backdropFilter: 'blur(8px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
+    padding: '20px',
+  },
+  warningModal: {
+    background: 'rgba(255, 255, 255, 0.98)',
+    backdropFilter: 'blur(10px)',
+    padding: '48px 40px',
+    borderRadius: '24px',
+    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+    border: '2px solid var(--accent-warm)',
+    textAlign: 'center',
+    maxWidth: '500px',
+    width: '100%',
+  },
+  warningTitle: {
+    fontSize: '2rem',
+    color: 'var(--espresso)',
+    marginBottom: '16px',
+    fontFamily: "'Poppins', sans-serif",
+    fontWeight: '700',
+  },
+  warningMessage: {
+    fontSize: '18px',
+    color: 'var(--text-secondary)',
+    marginBottom: '32px',
+    lineHeight: '1.6',
+  },
+  warningCountdownContainer: {
+    marginBottom: '32px',
+  },
+  warningCountdownNumber: {
+    fontSize: '96px',
+    fontWeight: 'bold',
+    color: 'var(--accent-warm)',
+    fontFamily: "'Poppins', sans-serif",
+    lineHeight: '1',
+  },
+  warningCountdownText: {
+    fontSize: '18px',
+    color: 'var(--text-secondary)',
+    marginTop: '8px',
+  },
+  continueButton: {
+    fontSize: '20px',
+    padding: '16px 48px',
+    minWidth: '200px',
   }
 };
 
