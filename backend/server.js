@@ -18,6 +18,10 @@ const PORT = process.env.PORT || 3001;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'your-secret-key-change-in-production';
 
+// Trust proxy - required when running behind reverse proxy (nginx, etc.)
+// This enables Express to trust X-Forwarded-* headers
+app.set('trust proxy', 1);
+
 // Data directories
 const DATA_DIR = path.join(__dirname, 'data');
 const IMAGES_DIR = path.join(DATA_DIR, 'images');
@@ -65,6 +69,12 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Session configuration
+// NOTE: Using MemoryStore (default) for simplicity. For production with multiple
+// instances or high traffic, consider using a persistent session store like:
+// - connect-redis: https://www.npmjs.com/package/connect-redis
+// - connect-mongo: https://www.npmjs.com/package/connect-mongo
+// - express-session-level: https://www.npmjs.com/package/express-session-level
 app.use(session({
   secret: SESSION_SECRET,
   resave: true, // Changed to true to ensure session is always saved
@@ -85,6 +95,10 @@ app.use(session({
 
 // Serve static files
 app.use('/images', express.static(IMAGES_DIR));
+
+// Serve frontend static files (built React app)
+const FRONTEND_DIR = path.join(__dirname, 'public');
+app.use(express.static(FRONTEND_DIR));
 
 // Debug middleware for development
 if (process.env.NODE_ENV === 'development') {
@@ -710,6 +724,12 @@ app.get('/api/admin/surveys/:id/results', requireAuth, async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Failed to load results' });
   }
+});
+
+// Fallback route - serve index.html for client-side routing
+// This must be after all API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
 });
 
 // Start server
