@@ -292,7 +292,7 @@ Axios API client with:
 2. **Create test survey:**
    - Go to http://localhost:5173
    - Click "Admin Login" (password: `admin123`)
-   - Click "Create New Survey"
+   - Click "New Survey"
    - Add items with text/images
    - Save survey
 
@@ -307,7 +307,7 @@ Axios API client with:
 
 4. **Check results:**
    - Admin dashboard
-   - Click "View Results"
+   - Click "Results"
    - Verify counts and percentages
 
 ## API Testing

@@ -145,7 +145,7 @@ docker compose up -d
 1. Go to the application homepage
 2. Click "Admin Login"
 3. Enter password: `admin123`
-4. Click "Create New Survey"
+4. Click "New Survey"
 5. Fill in survey details:
    - Survey title
    - Description (instructions for users)
@@ -157,15 +157,15 @@ docker compose up -d
 
 #### Managing Surveys
 
-- **View Results**: See detailed statistics and response data
-- **Edit Survey**: Modify title, description, or items
-- **Duplicate Survey**: Create a copy with fresh ratings
-- **Reset Ratings**: Clear all responses while keeping survey structure
-- **Delete Survey**: Permanently remove survey and all responses
+- **Results**: See detailed statistics and response data
+- **Edit**: Modify title, description, or items
+- **Duplicate**: Create a copy with fresh ratings
+- **Reset**: Clear all responses while keeping survey structure
+- **Delete**: Permanently remove survey and all responses
 
 #### Viewing Results
 
-1. From admin dashboard, click "View Results" on any survey
+1. From admin dashboard, click "Results" on any survey
 2. See statistics:
    - Total responses
    - Selection count per item

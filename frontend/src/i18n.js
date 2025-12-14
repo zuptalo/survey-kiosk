@@ -28,14 +28,14 @@ const resources = {
 
       // Admin
       "admin_dashboard": "Admin Dashboard",
-      "create_new_survey": "Create New Survey",
-      "edit_survey": "Edit Survey",
-      "view_results": "View Results",
-      "delete_survey": "Delete Survey",
-      "duplicate_survey": "Duplicate Survey",
-      "reset_ratings": "Reset Ratings",
-      "export_surveys": "Export All Surveys",
-      "import_surveys": "Import Surveys",
+      "create_new_survey": "New Survey",
+      "edit_survey": "Edit",
+      "view_results": "Results",
+      "delete_survey": "Delete",
+      "duplicate_survey": "Duplicate",
+      "reset_ratings": "Reset",
+      "export_surveys": "Export",
+      "import_surveys": "Import",
       "logout": "Logout",
 
       // Survey form
@@ -169,14 +169,14 @@ const resources = {
 
       // Admin
       "admin_dashboard": "Admin Kontrollpanel",
-      "create_new_survey": "Skapa ny undersökning",
-      "edit_survey": "Redigera undersökning",
-      "view_results": "Visa resultat",
-      "delete_survey": "Ta bort undersökning",
-      "duplicate_survey": "Duplicera undersökning",
-      "reset_ratings": "Återställ betyg",
-      "export_surveys": "Exportera alla undersökningar",
-      "import_surveys": "Importera undersökningar",
+      "create_new_survey": "Skapa ny",
+      "edit_survey": "Redigera",
+      "view_results": "Resultat",
+      "delete_survey": "Ta bort",
+      "duplicate_survey": "Duplicera",
+      "reset_ratings": "Återställ",
+      "export_surveys": "Exportera",
+      "import_surveys": "Importera",
       "logout": "Logga ut",
 
       // Survey form
