@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import rateLimit from 'express-rate-limit';
+import sharp from 'sharp';
 
 dotenv.config();
 
@@ -167,6 +168,50 @@ async function updateSurveyFirstResponse(surveyId) {
     survey.first_response_at = new Date().toISOString();
     await saveSurveys(surveys);
   }
+}
+
+// Image optimization utility
+async function optimizeImage(inputBuffer, originalFilename) {
+  const ext = path.extname(originalFilename).toLowerCase();
+
+  // Get image metadata to check if it's animated
+  const metadata = await sharp(inputBuffer).metadata();
+  const isAnimated = metadata.pages && metadata.pages > 1;
+
+  // For animated images (GIFs), convert to animated WebP
+  if (isAnimated || ext === '.gif') {
+    const optimized = await sharp(inputBuffer, { animated: true })
+      .resize(800, null, {
+        width: 800,
+        withoutEnlargement: true, // Don't upscale if smaller
+        fit: 'inside'
+      })
+      .webp({
+        quality: 85,
+        effort: 4 // Balance between compression and speed
+      })
+      .toBuffer();
+
+    return {
+      buffer: optimized,
+      extension: '.webp'
+    };
+  }
+
+  // For static images (JPEG, PNG, etc.), convert to static WebP
+  const optimized = await sharp(inputBuffer)
+    .resize(800, null, {
+      width: 800,
+      withoutEnlargement: true,
+      fit: 'inside'
+    })
+    .webp({ quality: 85 })
+    .toBuffer();
+
+  return {
+    buffer: optimized,
+    extension: '.webp'
+  };
 }
 
 // Auth middleware
@@ -370,12 +415,17 @@ app.post('/api/admin/surveys', requireAuth, async (req, res) => {
           };
 
           if (item.imageData) {
-            // Generate predictable filename: surveyId_questionId_itemId.ext
-            const extension = item.image ? path.extname(item.image) : '.jpg';
-            const newFilename = `${surveyId}_${question.id}_${item.id}${extension}`;
+            // Decode base64 image
             const buffer = Buffer.from(item.imageData, 'base64');
+            const originalFilename = item.image || 'image.jpg';
+
+            // Optimize and resize image
+            const { buffer: optimizedBuffer, extension } = await optimizeImage(buffer, originalFilename);
+
+            // Generate predictable filename: surveyId_questionId_itemId.webp
+            const newFilename = `${surveyId}_${question.id}_${item.id}${extension}`;
             const imagePath = path.join(IMAGES_DIR, newFilename);
-            await fs.writeFile(imagePath, buffer);
+            await fs.writeFile(imagePath, optimizedBuffer);
             processedItem.image = newFilename;
           }
 
@@ -402,12 +452,17 @@ app.post('/api/admin/surveys', requireAuth, async (req, res) => {
         };
 
         if (item.imageData) {
-          // Generate predictable filename: surveyId_itemId.ext
-          const extension = item.image ? path.extname(item.image) : '.jpg';
-          const newFilename = `${surveyId}_${item.id}${extension}`;
+          // Decode base64 image
           const buffer = Buffer.from(item.imageData, 'base64');
+          const originalFilename = item.image || 'image.jpg';
+
+          // Optimize and resize image
+          const { buffer: optimizedBuffer, extension } = await optimizeImage(buffer, originalFilename);
+
+          // Generate predictable filename: surveyId_itemId.webp
+          const newFilename = `${surveyId}_${item.id}${extension}`;
           const imagePath = path.join(IMAGES_DIR, newFilename);
-          await fs.writeFile(imagePath, buffer);
+          await fs.writeFile(imagePath, optimizedBuffer);
           processedItem.image = newFilename;
         }
 
@@ -485,8 +540,14 @@ app.put('/api/admin/surveys/:id', requireAuth, async (req, res) => {
           }
 
           if (item.imageData) {
-            // New image uploaded - generate predictable filename
-            const extension = item.image ? path.extname(item.image) : '.jpg';
+            // Decode base64 image
+            const buffer = Buffer.from(item.imageData, 'base64');
+            const originalFilename = item.image || 'image.jpg';
+
+            // Optimize and resize image
+            const { buffer: optimizedBuffer, extension } = await optimizeImage(buffer, originalFilename);
+
+            // Generate predictable filename with optimized extension
             const newFilename = `${req.params.id}_${question.id}_${item.id}${extension}`;
 
             // Delete old images with different extensions for this item
@@ -504,9 +565,8 @@ app.put('/api/admin/surveys/:id', requireAuth, async (req, res) => {
               }
             }
 
-            const buffer = Buffer.from(item.imageData, 'base64');
             const imagePath = path.join(IMAGES_DIR, newFilename);
-            await fs.writeFile(imagePath, buffer);
+            await fs.writeFile(imagePath, optimizedBuffer);
             processedItem.image = newFilename;
             newImages.add(newFilename);
           }
@@ -542,8 +602,14 @@ app.put('/api/admin/surveys/:id', requireAuth, async (req, res) => {
         }
 
         if (item.imageData) {
-          // New image uploaded - generate predictable filename
-          const extension = item.image ? path.extname(item.image) : '.jpg';
+          // Decode base64 image
+          const buffer = Buffer.from(item.imageData, 'base64');
+          const originalFilename = item.image || 'image.jpg';
+
+          // Optimize and resize image
+          const { buffer: optimizedBuffer, extension } = await optimizeImage(buffer, originalFilename);
+
+          // Generate predictable filename with optimized extension
           const newFilename = `${req.params.id}_${item.id}${extension}`;
 
           // Delete old images with different extensions for this item
@@ -561,9 +627,8 @@ app.put('/api/admin/surveys/:id', requireAuth, async (req, res) => {
             }
           }
 
-          const buffer = Buffer.from(item.imageData, 'base64');
           const imagePath = path.join(IMAGES_DIR, newFilename);
-          await fs.writeFile(imagePath, buffer);
+          await fs.writeFile(imagePath, optimizedBuffer);
           processedItem.image = newFilename;
           newImages.add(newFilename);
         }
@@ -1024,15 +1089,21 @@ app.post('/api/admin/surveys/import', requireAuth, async (req, res) => {
             text_sv: item.text_sv || ''
           };
 
-          // Save image if provided
+          // Save and optimize image if provided
           if (item.imageData && item.imageExtension) {
-            const extension = item.imageExtension;
-            const newImageName = `${surveyId}_q${qIndex + 1}_q${qIndex + 1}_item_${iIndex + 1}${extension}`;
-            const imagePath = path.join(IMAGES_DIR, newImageName);
-
             try {
+              // Decode base64 image
               const buffer = Buffer.from(item.imageData, 'base64');
-              await fs.writeFile(imagePath, buffer);
+              const originalFilename = `image${item.imageExtension}`;
+
+              // Optimize and resize image (handles old exports with large images)
+              const { buffer: optimizedBuffer, extension } = await optimizeImage(buffer, originalFilename);
+
+              // Generate predictable filename with optimized extension
+              const newImageName = `${surveyId}_q${qIndex + 1}_q${qIndex + 1}_item_${iIndex + 1}${extension}`;
+              const imagePath = path.join(IMAGES_DIR, newImageName);
+
+              await fs.writeFile(imagePath, optimizedBuffer);
               newItem.image = newImageName;
             } catch (error) {
               console.log(`Failed to save image for imported survey:`, error.message);
