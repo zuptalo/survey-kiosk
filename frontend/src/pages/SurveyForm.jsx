@@ -236,16 +236,19 @@ function SurveyForm() {
 
     if (canGoNext()) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handlePrevious = () => {
     if (canGoPrevious()) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
+
+  // Scroll to top whenever question changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentQuestionIndex]);
 
   const handleSubmit = async () => {
     const currentSelections = getCurrentSelections();
