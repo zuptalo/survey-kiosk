@@ -171,7 +171,11 @@ async function updateSurveyFirstResponse(surveyId) {
 }
 
 // Image optimization utility
-async function optimizeImage(inputBuffer, originalFilename) {
+// maxWidth: 800 for items, 1200 for hero images
+// quality: 85 for items, 90 for hero images
+async function optimizeImage(inputBuffer, originalFilename, options = {}) {
+  const maxWidth = options.maxWidth || 800;
+  const quality = options.quality || 85;
   const ext = path.extname(originalFilename).toLowerCase();
 
   // Get image metadata to check if it's animated
@@ -181,13 +185,13 @@ async function optimizeImage(inputBuffer, originalFilename) {
   // For animated images (GIFs), convert to animated WebP
   if (isAnimated || ext === '.gif') {
     const optimized = await sharp(inputBuffer, { animated: true })
-      .resize(800, null, {
-        width: 800,
+      .resize(maxWidth, null, {
+        width: maxWidth,
         withoutEnlargement: true, // Don't upscale if smaller
         fit: 'inside'
       })
       .webp({
-        quality: 85,
+        quality: quality,
         effort: 4 // Balance between compression and speed
       })
       .toBuffer();
@@ -200,12 +204,12 @@ async function optimizeImage(inputBuffer, originalFilename) {
 
   // For static images (JPEG, PNG, etc.), convert to static WebP
   const optimized = await sharp(inputBuffer)
-    .resize(800, null, {
-      width: 800,
+    .resize(maxWidth, null, {
+      width: maxWidth,
       withoutEnlargement: true,
       fit: 'inside'
     })
-    .webp({ quality: 85 })
+    .webp({ quality: quality })
     .toBuffer();
 
   return {
@@ -386,7 +390,17 @@ app.get('/api/admin/status', (req, res) => {
 // Create survey (admin)
 app.post('/api/admin/surveys', requireAuth, async (req, res) => {
   try {
-    const { title_en, title_sv, description_en, description_sv, items, questions } = req.body;
+    const {
+      title_en,
+      title_sv,
+      description_en,
+      description_sv,
+      items,
+      questions,
+      hero_imageData,
+      start_button_text_en,
+      start_button_text_sv
+    } = req.body;
 
     const surveys = await loadSurveys();
     const surveyId = String(surveys.length + 1);
@@ -397,9 +411,32 @@ app.post('/api/admin/surveys', requireAuth, async (req, res) => {
       title_sv,
       description_en,
       description_sv,
+      start_button_text_en: start_button_text_en || '',
+      start_button_text_sv: start_button_text_sv || '',
       created_at: new Date().toISOString(),
       first_response_at: null
     };
+
+    // Process hero image if provided
+    if (hero_imageData) {
+      try {
+        const buffer = Buffer.from(hero_imageData, 'base64');
+        const originalFilename = 'hero.jpg'; // Default name for hero images
+
+        // Optimize with higher quality and larger size for hero
+        const { buffer: optimizedBuffer, extension } = await optimizeImage(buffer, originalFilename, {
+          maxWidth: 1200,
+          quality: 90
+        });
+
+        const heroFilename = `${surveyId}_hero${extension}`;
+        const heroPath = path.join(IMAGES_DIR, heroFilename);
+        await fs.writeFile(heroPath, optimizedBuffer);
+        survey.hero_image = heroFilename;
+      } catch (error) {
+        console.log(`Failed to process hero image:`, error.message);
+      }
+    }
 
     // Handle new format (questions) or old format (items)
     if (questions && Array.isArray(questions)) {
@@ -491,7 +528,18 @@ app.put('/api/admin/surveys/:id', requireAuth, async (req, res) => {
       });
     }
 
-    const { title_en, title_sv, description_en, description_sv, items, questions } = req.body;
+    const {
+      title_en,
+      title_sv,
+      description_en,
+      description_sv,
+      items,
+      questions,
+      hero_imageData,
+      hero_image,
+      start_button_text_en,
+      start_button_text_sv
+    } = req.body;
 
     const surveys = await loadSurveys();
     const survey = surveys.find(s => s.id === req.params.id);
@@ -502,6 +550,9 @@ app.put('/api/admin/surveys/:id', requireAuth, async (req, res) => {
 
     // Collect all existing images before update for cleanup
     const oldImages = new Set();
+    if (survey.hero_image) {
+      oldImages.add(survey.hero_image);
+    }
     if (survey.questions && Array.isArray(survey.questions)) {
       survey.questions.forEach(q => {
         q.items?.forEach(item => {
@@ -518,6 +569,49 @@ app.put('/api/admin/surveys/:id', requireAuth, async (req, res) => {
     survey.title_sv = title_sv;
     survey.description_en = description_en;
     survey.description_sv = description_sv;
+    survey.start_button_text_en = start_button_text_en || '';
+    survey.start_button_text_sv = start_button_text_sv || '';
+
+    // Process hero image
+    if (hero_imageData) {
+      // New hero image uploaded
+      try {
+        const buffer = Buffer.from(hero_imageData, 'base64');
+        const originalFilename = 'hero.jpg';
+
+        // Optimize with higher quality and larger size for hero
+        const { buffer: optimizedBuffer, extension } = await optimizeImage(buffer, originalFilename, {
+          maxWidth: 1200,
+          quality: 90
+        });
+
+        // Delete old hero images with different extensions
+        const baseName = `${req.params.id}_hero`;
+        const possibleExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+        for (const ext of possibleExtensions) {
+          const oldPath = path.join(IMAGES_DIR, baseName + ext);
+          try {
+            await fs.unlink(oldPath);
+            console.log(`Deleted old hero image: ${baseName}${ext}`);
+          } catch (error) {
+            // File might not exist, that's ok
+          }
+        }
+
+        const heroFilename = `${req.params.id}_hero${extension}`;
+        const heroPath = path.join(IMAGES_DIR, heroFilename);
+        await fs.writeFile(heroPath, optimizedBuffer);
+        survey.hero_image = heroFilename;
+      } catch (error) {
+        console.log(`Failed to process hero image:`, error.message);
+      }
+    } else if (hero_image) {
+      // Keep existing hero image
+      survey.hero_image = hero_image;
+    } else {
+      // Hero image was removed
+      delete survey.hero_image;
+    }
 
     // Handle new format (questions) or old format (items)
     const newImages = new Set();
@@ -638,6 +732,11 @@ app.put('/api/admin/surveys/:id', requireAuth, async (req, res) => {
       survey.items = processedItems;
       // Remove questions array if present
       delete survey.questions;
+    }
+
+    // Preserve hero image from cleanup
+    if (survey.hero_image) {
+      newImages.add(survey.hero_image);
     }
 
     // Clean up orphaned images (removed questions/items or replaced images)
@@ -975,8 +1074,23 @@ app.get('/api/admin/surveys/export', requireAuth, async (req, res) => {
         title_sv: survey.title_sv,
         description_en: survey.description_en,
         description_sv: survey.description_sv,
+        start_button_text_en: survey.start_button_text_en || '',
+        start_button_text_sv: survey.start_button_text_sv || '',
         questions: []
       };
+
+      // Include hero image as base64 if exists
+      if (survey.hero_image) {
+        const heroPath = path.join(IMAGES_DIR, survey.hero_image);
+        try {
+          const imageBuffer = await fs.readFile(heroPath);
+          const extension = path.extname(survey.hero_image);
+          exportSurvey.hero_imageData = imageBuffer.toString('base64');
+          exportSurvey.hero_imageExtension = extension;
+        } catch (error) {
+          console.log(`Failed to read hero image ${survey.hero_image}:`, error.message);
+        }
+      }
 
       // Handle both multi-question and old format
       if (survey.questions && Array.isArray(survey.questions)) {
@@ -1128,10 +1242,33 @@ app.post('/api/admin/surveys/import', requireAuth, async (req, res) => {
         title_sv: importSurvey.title_sv || '',
         description_en: importSurvey.description_en || '',
         description_sv: importSurvey.description_sv || '',
+        start_button_text_en: importSurvey.start_button_text_en || '',
+        start_button_text_sv: importSurvey.start_button_text_sv || '',
         questions: newQuestions,
         created_at: new Date().toISOString(),
         first_response_at: null
       };
+
+      // Process hero image if provided
+      if (importSurvey.hero_imageData && importSurvey.hero_imageExtension) {
+        try {
+          const buffer = Buffer.from(importSurvey.hero_imageData, 'base64');
+          const originalFilename = `hero${importSurvey.hero_imageExtension}`;
+
+          // Optimize with higher quality and larger size for hero
+          const { buffer: optimizedBuffer, extension } = await optimizeImage(buffer, originalFilename, {
+            maxWidth: 1200,
+            quality: 90
+          });
+
+          const heroFilename = `${surveyId}_hero${extension}`;
+          const heroPath = path.join(IMAGES_DIR, heroFilename);
+          await fs.writeFile(heroPath, optimizedBuffer);
+          newSurvey.hero_image = heroFilename;
+        } catch (error) {
+          console.log(`Failed to save hero image for imported survey:`, error.message);
+        }
+      }
 
       surveys.push(newSurvey);
       importedSurveys.push(newSurvey);
