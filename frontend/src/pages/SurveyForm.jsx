@@ -307,6 +307,21 @@ function SurveyForm() {
     return item.text_en || item.text || '';
   };
 
+  const getStartButtonText = () => {
+    if (!survey) return t('start_survey') || 'Start Survey';
+    if (i18n.language === 'sv' && survey.start_button_text_sv) {
+      return survey.start_button_text_sv;
+    }
+    if (survey.start_button_text_en) {
+      return survey.start_button_text_en;
+    }
+    return i18n.language === 'sv' ? 'Starta undersökning' : 'Start Survey';
+  };
+
+  const handleStartSurvey = () => {
+    setSurveyStarted(true);
+  };
+
   if (loading) {
     return (
       <div className="loading">
@@ -342,6 +357,54 @@ function SurveyForm() {
     );
   }
 
+  // Show intro page before survey starts
+  if (!surveyStarted) {
+    return (
+      <div style={styles.introContainer}>
+        <LanguageSwitcher />
+
+        {/* Small close button at top left */}
+        <button
+          onClick={() => navigate('/surveys')}
+          style={styles.closeButton}
+          title={t('back_to_surveys')}
+        >
+          ✕
+        </button>
+
+        <div style={styles.introContent}>
+          {/* Hero Image */}
+          {survey.hero_image && (
+            <div style={styles.heroImageContainer}>
+              <img
+                src={`/images/${survey.hero_image}`}
+                alt={getSurveyTitle()}
+                style={styles.heroImage}
+              />
+            </div>
+          )}
+
+          {/* Survey Title */}
+          <h1 style={styles.introTitle}>{getSurveyTitle()}</h1>
+
+          {/* Survey Description */}
+          {getSurveyDescription() && (
+            <p style={styles.introDescription}>{getSurveyDescription()}</p>
+          )}
+
+          {/* Start Button */}
+          <button
+            onClick={handleStartSurvey}
+            className="btn btn-primary"
+            style={styles.startButton}
+          >
+            {getStartButtonText()}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const currentQuestion = getCurrentQuestion();
   const currentSelections = getCurrentSelections();
   const isLastQuestion = currentQuestionIndex === survey.questions.length - 1;
@@ -361,9 +424,6 @@ function SurveyForm() {
 
       <div style={styles.header}>
         <h1 style={styles.title}>{getSurveyTitle()}</h1>
-        {getSurveyDescription() && (
-          <p style={styles.description}>{getSurveyDescription()}</p>
-        )}
 
         {/* Progress indicator */}
         {survey.questions.length > 1 && (
@@ -796,6 +856,58 @@ const styles = {
     fontSize: '20px',
     padding: '16px 48px',
     minWidth: '200px',
+  },
+  introContainer: {
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '20px',
+  },
+  introContent: {
+    background: 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(10px)',
+    padding: '48px 40px',
+    borderRadius: '24px',
+    boxShadow: 'var(--shadow-xl)',
+    border: '1px solid rgba(255, 255, 255, 0.6)',
+    textAlign: 'center',
+    maxWidth: '800px',
+    width: '100%',
+  },
+  heroImageContainer: {
+    width: '100%',
+    marginBottom: '32px',
+    borderRadius: '16px',
+    overflow: 'hidden',
+    boxShadow: 'var(--shadow-lg)',
+  },
+  heroImage: {
+    width: '100%',
+    height: 'auto',
+    display: 'block',
+    borderRadius: '16px',
+  },
+  introTitle: {
+    fontSize: '2.5rem',
+    color: 'var(--espresso)',
+    marginBottom: '16px',
+    fontFamily: "'Poppins', sans-serif",
+    fontWeight: '700',
+    letterSpacing: '-0.02em',
+  },
+  introDescription: {
+    fontSize: '1.25rem',
+    color: 'var(--text-secondary)',
+    marginBottom: '32px',
+    lineHeight: '1.6',
+    fontFamily: "'Inter', sans-serif",
+  },
+  startButton: {
+    fontSize: '20px',
+    padding: '16px 48px',
+    minWidth: '200px',
+    fontWeight: '600',
   }
 };
 

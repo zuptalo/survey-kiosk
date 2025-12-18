@@ -14,6 +14,10 @@ function AdminNewSurvey() {
   const [titleSv, setTitleSv] = useState('');
   const [descriptionEn, setDescriptionEn] = useState('');
   const [descriptionSv, setDescriptionSv] = useState('');
+  const [heroImageData, setHeroImageData] = useState('');
+  const [heroImageFilename, setHeroImageFilename] = useState('');
+  const [startButtonTextEn, setStartButtonTextEn] = useState('');
+  const [startButtonTextSv, setStartButtonTextSv] = useState('');
   const [questions, setQuestions] = useState([{
     id: `q_${Date.now()}`,
     text_en: '',
@@ -162,6 +166,29 @@ function AdminNewSurvey() {
     }));
   };
 
+  const handleHeroImageUpload = async (file) => {
+    if (!file) return;
+
+    try {
+      validateImage(file);
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1];
+        setHeroImageData(base64);
+        setHeroImageFilename(file.name);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      showError(err.message);
+    }
+  };
+
+  const removeHeroImage = () => {
+    setHeroImageData('');
+    setHeroImageFilename('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -189,6 +216,11 @@ function AdminNewSurvey() {
       title_sv: titleSv.trim(),
       description_en: descriptionEn.trim(),
       description_sv: descriptionSv.trim(),
+      start_button_text_en: startButtonTextEn.trim(),
+      start_button_text_sv: startButtonTextSv.trim(),
+      ...(heroImageData && {
+        hero_imageData: heroImageData
+      }),
       questions: validatedQuestions.map((question, qIndex) => ({
         id: `q${qIndex + 1}`,
         text_en: question.text_en.trim(),
@@ -276,6 +308,65 @@ function AdminNewSurvey() {
               onChange={(e) => setDescriptionSv(e.target.value)}
               placeholder={t('swedish_description')}
             />
+          </div>
+        </div>
+
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>Hero Image & Start Button</h3>
+
+          <div className="form-group">
+            <label className="form-label">Hero Image (Optional)</label>
+            <p style={styles.helpText}>
+              Upload an optional hero image for the survey intro page. Supports JPEG, PNG, GIF (including animated).
+            </p>
+            {heroImageData ? (
+              <div>
+                <img
+                  src={`data:image/png;base64,${heroImageData}`}
+                  alt="Hero preview"
+                  style={styles.heroPreview}
+                />
+                <button
+                  type="button"
+                  onClick={removeHeroImage}
+                  className="btn btn-secondary"
+                  style={{marginTop: '10px'}}
+                >
+                  {t('remove_image')}
+                </button>
+              </div>
+            ) : (
+              <input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                onChange={(e) => handleHeroImageUpload(e.target.files[0])}
+                className="form-input"
+              />
+            )}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Start Button Text (English)</label>
+            <input
+              type="text"
+              className="form-input"
+              value={startButtonTextEn}
+              onChange={(e) => setStartButtonTextEn(e.target.value)}
+              placeholder="Start Survey"
+            />
+            <p style={styles.helpText}>Leave empty to use default: "Start Survey"</p>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Start Button Text (Swedish)</label>
+            <input
+              type="text"
+              className="form-input"
+              value={startButtonTextSv}
+              onChange={(e) => setStartButtonTextSv(e.target.value)}
+              placeholder="Starta undersökning"
+            />
+            <p style={styles.helpText}>Leave empty to use default: "Starta undersökning"</p>
           </div>
         </div>
 
@@ -506,6 +597,20 @@ const styles = {
     borderRadius: '12px',
     display: 'block',
     boxShadow: 'var(--shadow-sm)',
+  },
+  heroPreview: {
+    width: '100%',
+    maxWidth: '600px',
+    height: 'auto',
+    borderRadius: '16px',
+    display: 'block',
+    boxShadow: 'var(--shadow-md)',
+  },
+  helpText: {
+    fontSize: '13px',
+    color: 'var(--text-secondary)',
+    marginTop: '6px',
+    fontStyle: 'italic',
   },
   actions: {
     display: 'flex',

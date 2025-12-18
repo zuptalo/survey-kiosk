@@ -96,6 +96,17 @@ function SurveyList() {
               className="card"
               style={styles.surveyCard}
             >
+              {/* Hero Image Thumbnail */}
+              {survey.hero_image && (
+                <div style={styles.heroThumbnailContainer}>
+                  <img
+                    src={`/images/${survey.hero_image}`}
+                    alt={getSurveyTitle(survey)}
+                    style={styles.heroThumbnail}
+                  />
+                </div>
+              )}
+
               <h2 style={styles.surveyTitle}>{getSurveyTitle(survey)}</h2>
               {getSurveyDescription(survey) && (
                 <p style={styles.surveyDescription}>{getSurveyDescription(survey)}</p>
@@ -210,6 +221,19 @@ const styles = {
     fontWeight: '600',
     fontFamily: "'Poppins', sans-serif",
     boxShadow: 'var(--shadow-sm)',
+  },
+  heroThumbnailContainer: {
+    width: '100%',
+    marginBottom: '16px',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    boxShadow: 'var(--shadow-md)',
+  },
+  heroThumbnail: {
+    width: '100%',
+    height: 'auto',
+    display: 'block',
+    borderRadius: '12px',
   }
 };
 
