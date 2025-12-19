@@ -51,13 +51,19 @@ function generateVersion() {
   }
 }
 
-// Plugin to update service worker cache version on build
+// Plugin to update service worker cache version and app name on build
 const serviceWorkerPlugin = () => ({
   name: 'service-worker-cache-version',
   closeBundle() {
     const swPath = join(process.cwd(), 'public', 'sw.js')
     const distSwPath = join(process.cwd(), 'dist', 'sw.js')
     const versionPath = join(process.cwd(), 'dist', 'version.json')
+    const manifestPath = join(process.cwd(), 'public', 'manifest.json')
+    const distManifestPath = join(process.cwd(), 'dist', 'manifest.json')
+
+    // Get app name from environment or use default
+    const appName = process.env.VITE_APP_NAME || 'Zuptalo'
+    const appShortName = process.env.VITE_APP_SHORT_NAME || appName
 
     // Generate version
     const version = generateVersion()
@@ -72,6 +78,15 @@ const serviceWorkerPlugin = () => ({
 
     // Write to dist folder
     writeFileSync(distSwPath, swContent)
+
+    // Update manifest.json with app name
+    if (existsSync(manifestPath)) {
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'))
+      manifest.name = `${appName} Survey Kiosk`
+      manifest.short_name = appShortName
+      writeFileSync(distManifestPath, JSON.stringify(manifest, null, 2))
+      console.log(`✓ Manifest updated with app name: ${appName}`)
+    }
 
     // Create version.json for the app to read
     const versionInfo = {

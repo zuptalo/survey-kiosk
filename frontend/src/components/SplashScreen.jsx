@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import APP_CONFIG from '../config/app';
 
 function SplashScreen({ onComplete }) {
   const [versionInfo, setVersionInfo] = useState(null);
@@ -57,7 +58,7 @@ function SplashScreen({ onComplete }) {
         </div>
 
         {/* App Name */}
-        <h1 style={styles.appName}>Dream Dose</h1>
+        <h1 style={styles.appName}>{APP_CONFIG.name}</h1>
         <h2 style={styles.appSubtitle}>Survey Kiosk</h2>
 
         {/* Version */}

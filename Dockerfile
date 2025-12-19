@@ -4,8 +4,9 @@
 # Stage 1: Build frontend
 FROM node:18-alpine AS frontend-builder
 
-# Accept version as build argument
+# Accept build arguments
 ARG APP_VERSION=dev
+ARG APP_NAME=Zuptalo
 
 WORKDIR /app/frontend
 
@@ -19,10 +20,11 @@ RUN --mount=type=cache,target=/root/.npm \
 # Copy frontend source
 COPY frontend/ ./
 
-# Build frontend for production with version
+# Build frontend for production with version and app name
 ENV APP_VERSION=${APP_VERSION}
+ENV VITE_APP_NAME=${APP_NAME}
 RUN npm run build && \
-    echo "Built with version: ${APP_VERSION}"
+    echo "Built with version: ${APP_VERSION} and app name: ${APP_NAME}"
 
 # Stage 2: Setup backend with built frontend
 FROM node:18-alpine

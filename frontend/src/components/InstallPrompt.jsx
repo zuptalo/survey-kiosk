@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import APP_CONFIG from '../config/app';
 
 function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
@@ -82,7 +83,7 @@ function InstallPrompt() {
       case 'ios-safari':
         return {
           icon: '📱',
-          title: 'Install Dream Dose App',
+          title: `Install ${APP_CONFIG.name} App`,
           steps: [
             'Tap the Share button',
             'Scroll and tap "Add to Home Screen"',
@@ -93,7 +94,7 @@ function InstallPrompt() {
       case 'android-chrome':
         return {
           icon: '📱',
-          title: 'Install Dream Dose App',
+          title: `Install ${APP_CONFIG.name} App`,
           steps: deferredPrompt
             ? ['Tap the "Install" button below']
             : [
@@ -105,18 +106,18 @@ function InstallPrompt() {
       case 'desktop-chrome':
         return {
           icon: '💻',
-          title: 'Install Dream Dose App',
+          title: `Install ${APP_CONFIG.name} App`,
           steps: deferredPrompt
             ? ['Click the "Install" button below']
             : [
                 'Click the install icon in the address bar',
-                'Or go to menu → "Install Dream Dose"'
+                `Or go to menu → "Install ${APP_CONFIG.name}"`
               ]
         };
       default:
         return {
           icon: '📱',
-          title: 'Use Dream Dose as an App',
+          title: `Use ${APP_CONFIG.name} as an App`,
           steps: [
             'Look for "Add to Home Screen" option',
             'In your browser menu or share options'
