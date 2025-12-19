@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import SplashScreen from './components/SplashScreen';
+import InstallPrompt from './components/InstallPrompt';
 import Home from './pages/Home';
 import SurveyList from './pages/SurveyList';
 import SurveyForm from './pages/SurveyForm';
@@ -81,6 +82,9 @@ function App() {
           }
         />
         </Routes>
+
+        {/* Install prompt for browsers */}
+        <InstallPrompt />
       </AuthProvider>
     </NotificationProvider>
   );
