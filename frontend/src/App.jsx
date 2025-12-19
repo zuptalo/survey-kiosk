@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { ConfigProvider } from './context/ConfigContext';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import SplashScreen from './components/SplashScreen';
@@ -47,18 +48,27 @@ function App() {
 
   // Force installation - show requirement screen if not running as PWA
   if (!isStandalone) {
-    return <RequireInstallation />;
+    return (
+      <ConfigProvider>
+        <RequireInstallation />
+      </ConfigProvider>
+    );
   }
 
   // Show splash on first load
   if (showSplash && !splashShown) {
-    return <SplashScreen onComplete={handleSplashComplete} />;
+    return (
+      <ConfigProvider>
+        <SplashScreen onComplete={handleSplashComplete} />
+      </ConfigProvider>
+    );
   }
 
   return (
-    <NotificationProvider>
-      <AuthProvider>
-        <Routes>
+    <ConfigProvider>
+      <NotificationProvider>
+        <AuthProvider>
+          <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/surveys" element={<SurveyList />} />
         <Route path="/survey/:id" element={<SurveyForm />} />
@@ -97,10 +107,11 @@ function App() {
         />
         </Routes>
 
-        {/* Connectivity monitor - blocks app when offline */}
-        <ConnectivityMonitor />
-      </AuthProvider>
-    </NotificationProvider>
+          {/* Connectivity monitor - blocks app when offline */}
+          <ConnectivityMonitor />
+        </AuthProvider>
+      </NotificationProvider>
+    </ConfigProvider>
   );
 }
 

@@ -289,6 +289,7 @@ app.get('/api/health', (req, res) => {
 // Get client configuration
 app.get('/api/config', (req, res) => {
   res.json({
+    appName: process.env.APP_NAME || 'Zuptalo',
     thankYouCountdown: parseInt(process.env.THANK_YOU_COUNTDOWN) || 5,
     inactivityTimeout: parseInt(process.env.INACTIVITY_TIMEOUT) || 30
   });

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import APP_CONFIG from '../config/app';
+import { useConfig } from '../context/ConfigContext';
 
 function InstallPrompt() {
+  const { appName } = useConfig();
   const [showPrompt, setShowPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [platform, setPlatform] = useState('unknown');
@@ -83,7 +84,7 @@ function InstallPrompt() {
       case 'ios-safari':
         return {
           icon: '📱',
-          title: `Install ${APP_CONFIG.name} App`,
+          title: `Install ${appName} App`,
           steps: [
             'Tap the Share button',
             'Scroll and tap "Add to Home Screen"',
@@ -94,7 +95,7 @@ function InstallPrompt() {
       case 'android-chrome':
         return {
           icon: '📱',
-          title: `Install ${APP_CONFIG.name} App`,
+          title: `Install ${appName} App`,
           steps: deferredPrompt
             ? ['Tap the "Install" button below']
             : [
@@ -106,18 +107,18 @@ function InstallPrompt() {
       case 'desktop-chrome':
         return {
           icon: '💻',
-          title: `Install ${APP_CONFIG.name} App`,
+          title: `Install ${appName} App`,
           steps: deferredPrompt
             ? ['Click the "Install" button below']
             : [
                 'Click the install icon in the address bar',
-                `Or go to menu → "Install ${APP_CONFIG.name}"`
+                `Or go to menu → "Install ${appName}"`
               ]
         };
       default:
         return {
           icon: '📱',
-          title: `Use ${APP_CONFIG.name} as an App`,
+          title: `Use ${appName} as an App`,
           steps: [
             'Look for "Add to Home Screen" option',
             'In your browser menu or share options'

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import APP_CONFIG from '../config/app';
+import { useConfig } from '../context/ConfigContext';
 
 function RequireInstallation() {
+  const { appName } = useConfig();
   const [platform, setPlatform] = useState('unknown');
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -80,10 +81,10 @@ function RequireInstallation() {
         return {
           icon: '✨',
           title: 'App Already Installed!',
-          subtitle: `${APP_CONFIG.name} is already installed on your device`,
+          subtitle: `${appName} is already installed on your device`,
           steps: [
             'Go to your home screen',
-            `Look for the "${APP_CONFIG.name}" app icon ☕`,
+            `Look for the "${appName}" app icon ☕`,
             'Tap to open the app',
             'Enjoy the full-screen experience!'
           ]
@@ -92,10 +93,10 @@ function RequireInstallation() {
         return {
           icon: '✨',
           title: 'App Already Installed!',
-          subtitle: `${APP_CONFIG.name} is already installed on your device`,
+          subtitle: `${appName} is already installed on your device`,
           steps: [
             'Open your app drawer or home screen',
-            `Look for the "${APP_CONFIG.name}" app`,
+            `Look for the "${appName}" app`,
             'Tap to open the app',
             'Enjoy the full-screen experience!'
           ]
@@ -104,11 +105,11 @@ function RequireInstallation() {
         return {
           icon: '✨',
           title: 'App Already Installed!',
-          subtitle: `${APP_CONFIG.name} is already installed on your computer`,
+          subtitle: `${appName} is already installed on your computer`,
           steps: [
             'Check your applications/programs',
             'Or look in your browser\'s app menu',
-            `Click "${APP_CONFIG.name}" to open`,
+            `Click "${appName}" to open`,
             'Enjoy the dedicated app experience!'
           ]
         };
@@ -116,10 +117,10 @@ function RequireInstallation() {
         return {
           icon: '✨',
           title: 'App Already Installed!',
-          subtitle: `${APP_CONFIG.name} is already installed`,
+          subtitle: `${appName} is already installed`,
           steps: [
             'Find the app in your apps/home screen',
-            `Open "${APP_CONFIG.name}"`,
+            `Open "${appName}"`,
             'Enjoy the app experience!'
           ]
         };
@@ -163,7 +164,7 @@ function RequireInstallation() {
             ? ['Click the "Install App" button below to get started']
             : [
                 'Look for the install icon ⊕ in the address bar',
-                `Or go to menu (⋮) → "Install ${APP_CONFIG.name}"`,
+                `Or go to menu (⋮) → "Install ${appName}"`,
                 'Click "Install" to complete',
                 'Open the app from your applications'
               ]
@@ -208,7 +209,7 @@ function RequireInstallation() {
         {/* App branding */}
         <div style={styles.branding}>
           <div style={styles.coffeeIcon}>☕</div>
-          <h1 style={styles.appName}>{APP_CONFIG.name}</h1>
+          <h1 style={styles.appName}>{appName}</h1>
           <h2 style={styles.appSubtitle}>Survey Kiosk</h2>
         </div>
 
