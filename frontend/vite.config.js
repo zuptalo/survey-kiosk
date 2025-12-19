@@ -9,9 +9,11 @@ const serviceWorkerPlugin = () => ({
   closeBundle() {
     const swPath = join(process.cwd(), 'public', 'sw.js')
     const distSwPath = join(process.cwd(), 'dist', 'sw.js')
+    const versionPath = join(process.cwd(), 'dist', 'version.json')
 
     // Generate version based on timestamp
     const cacheVersion = Date.now().toString()
+    const buildDate = new Date().toISOString()
 
     // Read the service worker template
     let swContent = readFileSync(swPath, 'utf-8')
@@ -22,7 +24,16 @@ const serviceWorkerPlugin = () => ({
     // Write to dist folder
     writeFileSync(distSwPath, swContent)
 
+    // Create version.json for the app to read
+    const versionInfo = {
+      version: cacheVersion,
+      buildDate: buildDate,
+      buildTimestamp: parseInt(cacheVersion)
+    }
+    writeFileSync(versionPath, JSON.stringify(versionInfo, null, 2))
+
     console.log(`✓ Service Worker updated with cache version: ${cacheVersion}`)
+    console.log(`✓ Version info written to version.json`)
   }
 })
 

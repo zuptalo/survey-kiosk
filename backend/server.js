@@ -115,6 +115,17 @@ app.get('/sw.js', (req, res) => {
   res.sendFile(path.join(FRONTEND_DIR, 'sw.js'));
 });
 
+// Version info should also never be cached
+app.get('/version.json', (req, res) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Content-Type': 'application/json'
+  });
+  res.sendFile(path.join(FRONTEND_DIR, 'version.json'));
+});
+
 // Serve other static files with standard caching
 app.use(express.static(FRONTEND_DIR, {
   maxAge: '1h', // Cache static assets for 1 hour

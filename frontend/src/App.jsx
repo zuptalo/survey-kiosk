@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import SplashScreen from './components/SplashScreen';
 import Home from './pages/Home';
 import SurveyList from './pages/SurveyList';
 import SurveyForm from './pages/SurveyForm';
@@ -12,6 +14,32 @@ import AdminResults from './pages/AdminResults';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
+  const [showSplash, setShowSplash] = useState(true);
+  const [splashShown, setSplashShown] = useState(false);
+
+  useEffect(() => {
+    // Check if splash was already shown in this session
+    const splashShownInSession = sessionStorage.getItem('splashShown');
+
+    if (splashShownInSession) {
+      // Already shown in this session, skip splash
+      setShowSplash(false);
+      setSplashShown(true);
+    }
+  }, []);
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    setSplashShown(true);
+    // Mark splash as shown in this session
+    sessionStorage.setItem('splashShown', 'true');
+  };
+
+  // Show splash on first load
+  if (showSplash && !splashShown) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
   return (
     <NotificationProvider>
       <AuthProvider>
