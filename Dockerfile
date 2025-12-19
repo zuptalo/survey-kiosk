@@ -1,4 +1,5 @@
 # Multi-stage build for React + Node.js
+# syntax=docker/dockerfile:1.4
 
 # Stage 1: Build frontend
 FROM node:18-alpine AS frontend-builder
@@ -8,8 +9,9 @@ WORKDIR /app/frontend
 # Copy frontend package files
 COPY frontend/package.json frontend/package-lock.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies with cache mount for faster builds
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 # Copy frontend source
 COPY frontend/ ./
@@ -28,8 +30,9 @@ RUN apk add --no-cache curl
 # Copy backend package files
 COPY backend/package.json backend/package-lock.json ./
 
-# Install production dependencies only
-RUN npm ci --omit=dev
+# Install production dependencies only with cache mount
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev
 
 # Copy backend source
 COPY backend/ ./
