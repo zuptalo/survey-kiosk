@@ -273,29 +273,44 @@ THANK_YOU_COUNTDOWN=5
 INACTIVITY_TIMEOUT=30
 ```
 
-Then build and run:
+Then run (no build needed if using pre-built image):
+```bash
+docker compose up -d
+```
+
+**Note:** The `APP_NAME` is loaded at runtime from the backend API, so changing it only requires restarting the container:
+```bash
+docker compose down
+docker compose up -d
+```
+
+If you're building from source, the first time you'll need to build:
 ```bash
 docker compose build
 docker compose up -d
 ```
 
-**Important:** The `APP_NAME` is embedded in the frontend at build time. If you change `APP_NAME`, you must rebuild the Docker image:
+**Setting via Docker run:**
 ```bash
-docker compose down
-docker compose build --no-cache
-docker compose up -d
-```
-
-**Setting via Docker build + run:**
-```bash
-# Build with custom app name
-docker build --build-arg APP_NAME="Your Custom Name" -t survey-kiosk .
-
-# Run with environment variables
+# Run with environment variables (uses pre-built image)
 docker run -e APP_NAME="Your Custom Name" \
   -e ADMIN_PASSWORD=your-password \
   -e SESSION_SECRET=your-secret \
-  -p 3001:3001 survey-kiosk
+  -p 3001:3001 -v ./data:/app/data \
+  <username>/survey-kiosk:react-latest
+```
+
+**Or build from source:**
+```bash
+# Build from source (optional build arg for fallback)
+docker build --build-arg APP_NAME="Your Custom Name" -t survey-kiosk .
+
+# Run
+docker run -e APP_NAME="Your Custom Name" \
+  -e ADMIN_PASSWORD=your-password \
+  -e SESSION_SECRET=your-secret \
+  -p 3001:3001 -v ./data:/app/data \
+  survey-kiosk
 ```
 
 ### Supported Image Formats
