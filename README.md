@@ -273,13 +273,25 @@ THANK_YOU_COUNTDOWN=5
 INACTIVITY_TIMEOUT=30
 ```
 
-Then simply run:
+Then build and run:
 ```bash
+docker compose build
 docker compose up -d
 ```
 
-**Setting via Docker run:**
+**Important:** The `APP_NAME` is embedded in the frontend at build time. If you change `APP_NAME`, you must rebuild the Docker image:
 ```bash
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+```
+
+**Setting via Docker build + run:**
+```bash
+# Build with custom app name
+docker build --build-arg APP_NAME="Your Custom Name" -t survey-kiosk .
+
+# Run with environment variables
 docker run -e APP_NAME="Your Custom Name" \
   -e ADMIN_PASSWORD=your-password \
   -e SESSION_SECRET=your-secret \
