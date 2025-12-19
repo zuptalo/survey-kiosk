@@ -10,6 +10,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
+      - APP_NAME=${APP_NAME:-Zuptalo}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
       - SESSION_SECRET=${SESSION_SECRET:-change-this-secret-in-production}
       - THANK_YOU_COUNTDOWN=${THANK_YOU_COUNTDOWN:-5}

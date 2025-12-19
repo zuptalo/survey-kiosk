@@ -33,7 +33,7 @@ A modern, containerized survey application built with React and Node.js, designe
 - React Router v6 for routing
 - Axios for API calls
 - i18next for internationalization
-- CSS Modules with Dream Dose Cafe theme
+- CSS Modules with warm cafe theme
 
 **Backend:**
 - Node.js 18 with Express
@@ -245,8 +245,11 @@ FRONTEND_URL=http://localhost:5173
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `NODE_ENV` | `production` | Node.js environment |
+| `APP_NAME` | `Zuptalo` | Application name shown in UI and PWA manifest |
 | `ADMIN_PASSWORD` | `admin123` | Admin dashboard password |
 | `SESSION_SECRET` | (required) | Express session secret key |
+| `THANK_YOU_COUNTDOWN` | `5` | Seconds to show thank you screen before reset |
+| `INACTIVITY_TIMEOUT` | `30` | Minutes of inactivity before survey auto-resets |
 
 **Setting via Docker Compose:**
 
@@ -254,13 +257,31 @@ Edit `compose.yaml`:
 ```yaml
 environment:
   - NODE_ENV=production
+  - APP_NAME=Your Custom Name
   - ADMIN_PASSWORD=your-secure-password
   - SESSION_SECRET=your-random-secret-key
+  - THANK_YOU_COUNTDOWN=5
+  - INACTIVITY_TIMEOUT=30
+```
+
+**Or create a `.env` file** (recommended for sensitive values):
+```env
+APP_NAME=Your Custom Name
+ADMIN_PASSWORD=your-secure-password
+SESSION_SECRET=your-random-secret-key
+THANK_YOU_COUNTDOWN=5
+INACTIVITY_TIMEOUT=30
+```
+
+Then simply run:
+```bash
+docker compose up -d
 ```
 
 **Setting via Docker run:**
 ```bash
-docker run -e ADMIN_PASSWORD=your-password \
+docker run -e APP_NAME="Your Custom Name" \
+  -e ADMIN_PASSWORD=your-password \
   -e SESSION_SECRET=your-secret \
   -p 3001:3001 survey-kiosk
 ```
@@ -302,7 +323,8 @@ Once installed, the app will:
 - Launch in fullscreen mode without browser chrome
 - Display the custom icon on your device
 - Work in landscape-primary orientation (ideal for kiosks)
-- Use Dream Dose Cafe colors for theme and splash screen
+- Use warm cafe colors for theme and splash screen
+- Show your custom app name (configurable via APP_NAME environment variable)
 
 ## Data Structure
 
