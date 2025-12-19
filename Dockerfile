@@ -4,6 +4,9 @@
 # Stage 1: Build frontend
 FROM node:18-alpine AS frontend-builder
 
+# Accept version as build argument
+ARG APP_VERSION=dev
+
 WORKDIR /app/frontend
 
 # Copy frontend package files
@@ -16,8 +19,10 @@ RUN --mount=type=cache,target=/root/.npm \
 # Copy frontend source
 COPY frontend/ ./
 
-# Build frontend for production
-RUN npm run build
+# Build frontend for production with version
+ENV APP_VERSION=${APP_VERSION}
+RUN npm run build && \
+    echo "Built with version: ${APP_VERSION}"
 
 # Stage 2: Setup backend with built frontend
 FROM node:18-alpine

@@ -29,14 +29,19 @@ function SplashScreen({ onComplete }) {
 
   const formatVersion = (version) => {
     if (version === 'dev') return 'Development';
-    // Format timestamp as version (e.g., "v20231219.1234")
-    const date = new Date(parseInt(version));
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `v${year}${month}${day}.${hours}${minutes}`;
+
+    // If version is in the format "react-YYYYMMDD-N", display as-is with v prefix
+    if (version.startsWith('react-')) {
+      // Extract the date and build number: react-20231219-1 -> v20231219.1
+      const parts = version.replace('react-', '').split('-');
+      if (parts.length === 2) {
+        return `v${parts[0]}.${parts[1]}`;
+      }
+      return version;
+    }
+
+    // Fallback for other formats
+    return version;
   };
 
   return (
