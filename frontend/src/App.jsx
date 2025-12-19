@@ -3,7 +3,8 @@ import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import SplashScreen from './components/SplashScreen';
-import InstallPrompt from './components/InstallPrompt';
+import RequireInstallation from './components/RequireInstallation';
+import ConnectivityMonitor from './components/ConnectivityMonitor';
 import Home from './pages/Home';
 import SurveyList from './pages/SurveyList';
 import SurveyForm from './pages/SurveyForm';
@@ -17,8 +18,16 @@ import ProtectedRoute from './components/ProtectedRoute';
 function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [splashShown, setSplashShown] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
+    // Check if app is running as installed PWA (standalone mode)
+    const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+                      window.navigator.standalone ||
+                      document.referrer.includes('android-app://');
+
+    setIsStandalone(standalone);
+
     // Check if splash was already shown in this session
     const splashShownInSession = sessionStorage.getItem('splashShown');
 
@@ -35,6 +44,11 @@ function App() {
     // Mark splash as shown in this session
     sessionStorage.setItem('splashShown', 'true');
   };
+
+  // Force installation - show requirement screen if not running as PWA
+  if (!isStandalone) {
+    return <RequireInstallation />;
+  }
 
   // Show splash on first load
   if (showSplash && !splashShown) {
@@ -83,8 +97,8 @@ function App() {
         />
         </Routes>
 
-        {/* Install prompt for browsers */}
-        <InstallPrompt />
+        {/* Connectivity monitor - blocks app when offline */}
+        <ConnectivityMonitor />
       </AuthProvider>
     </NotificationProvider>
   );

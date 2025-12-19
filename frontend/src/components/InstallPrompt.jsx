@@ -146,8 +146,8 @@ function InstallPrompt() {
             <span>Faster access</span>
           </div>
           <div style={styles.benefit}>
-            <span style={styles.benefitIcon}>📴</span>
-            <span>Works offline</span>
+            <span style={styles.benefitIcon}>📱</span>
+            <span>Full-screen mode</span>
           </div>
           <div style={styles.benefit}>
             <span style={styles.benefitIcon}>🎯</span>
