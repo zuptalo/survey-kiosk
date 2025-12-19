@@ -103,7 +103,34 @@ app.use('/images', express.static(IMAGES_DIR));
 
 // Serve frontend static files (built React app)
 const FRONTEND_DIR = path.join(__dirname, 'public');
-app.use(express.static(FRONTEND_DIR));
+
+// Service worker should never be cached - always fetch fresh
+app.get('/sw.js', (req, res) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Surrogate-Control': 'no-store'
+  });
+  res.sendFile(path.join(FRONTEND_DIR, 'sw.js'));
+});
+
+// Serve other static files with standard caching
+app.use(express.static(FRONTEND_DIR, {
+  maxAge: '1h', // Cache static assets for 1 hour
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, filePath) => {
+    // Never cache index.html - always fetch fresh
+    if (filePath.endsWith('index.html')) {
+      res.set({
+        'Cache-Control': 'no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+    }
+  }
+}));
 
 // Debug middleware for development
 if (process.env.NODE_ENV === 'development') {
