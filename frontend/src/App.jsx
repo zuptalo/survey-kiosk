@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { ConfigProvider } from './context/ConfigContext';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { useFullscreen } from './hooks/useFullscreen';
 import SplashScreen from './components/SplashScreen';
 import RequireInstallation from './components/RequireInstallation';
 import ConnectivityMonitor from './components/ConnectivityMonitor';
@@ -20,6 +21,9 @@ function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [splashShown, setSplashShown] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+
+  // Enable fullscreen handling
+  useFullscreen();
 
   useEffect(() => {
     // Check if app is running as installed PWA (standalone mode)
