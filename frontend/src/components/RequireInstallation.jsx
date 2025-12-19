@@ -3,8 +3,33 @@ import { useState, useEffect } from 'react';
 function RequireInstallation() {
   const [platform, setPlatform] = useState('unknown');
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [checkingInstallation, setCheckingInstallation] = useState(true);
 
   useEffect(() => {
+    // Check if app is already installed using getInstalledRelatedApps API
+    const checkIfInstalled = async () => {
+      try {
+        if ('getInstalledRelatedApps' in navigator) {
+          const relatedApps = await navigator.getInstalledRelatedApps();
+          console.log('Related apps:', relatedApps);
+
+          // If any related apps are found, the PWA is installed
+          if (relatedApps.length > 0) {
+            setIsInstalled(true);
+            setCheckingInstallation(false);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error checking installed apps:', error);
+      }
+
+      setCheckingInstallation(false);
+    };
+
+    checkIfInstalled();
+
     // Detect platform
     const userAgent = navigator.userAgent.toLowerCase();
     const isIOS = /iphone|ipad|ipod/.test(userAgent);
@@ -48,7 +73,59 @@ function RequireInstallation() {
     }
   };
 
-  const getInstructions = () => {
+  const getOpenInstructions = () => {
+    switch (platform) {
+      case 'ios-safari':
+        return {
+          icon: '✨',
+          title: 'App Already Installed!',
+          subtitle: 'Dream Dose is already installed on your device',
+          steps: [
+            'Go to your home screen',
+            'Look for the "Dream Dose" app icon ☕',
+            'Tap to open the app',
+            'Enjoy the full-screen experience!'
+          ]
+        };
+      case 'android-chrome':
+        return {
+          icon: '✨',
+          title: 'App Already Installed!',
+          subtitle: 'Dream Dose is already installed on your device',
+          steps: [
+            'Open your app drawer or home screen',
+            'Look for the "Dream Dose" app',
+            'Tap to open the app',
+            'Enjoy the full-screen experience!'
+          ]
+        };
+      case 'desktop-chrome':
+        return {
+          icon: '✨',
+          title: 'App Already Installed!',
+          subtitle: 'Dream Dose is already installed on your computer',
+          steps: [
+            'Check your applications/programs',
+            'Or look in your browser\'s app menu',
+            'Click "Dream Dose" to open',
+            'Enjoy the dedicated app experience!'
+          ]
+        };
+      default:
+        return {
+          icon: '✨',
+          title: 'App Already Installed!',
+          subtitle: 'Dream Dose is already installed',
+          steps: [
+            'Find the app in your apps/home screen',
+            'Open "Dream Dose"',
+            'Enjoy the app experience!'
+          ]
+        };
+    }
+  };
+
+  const getInstallInstructions = () => {
     switch (platform) {
       case 'ios-safari':
         return {
@@ -105,7 +182,19 @@ function RequireInstallation() {
     }
   };
 
-  const instructions = getInstructions();
+  // Show loading while checking installation status
+  if (checkingInstallation) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.content}>
+          <div style={styles.loadingIcon}>☕</div>
+          <p style={styles.loadingText}>Checking installation...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const instructions = isInstalled ? getOpenInstructions() : getInstallInstructions();
 
   return (
     <div style={styles.container}>
@@ -126,35 +215,51 @@ function RequireInstallation() {
         <h3 style={styles.title}>{instructions.title}</h3>
         <p style={styles.subtitle}>{instructions.subtitle}</p>
 
-        {/* Why install section */}
-        <div style={styles.whySection}>
-          <h4 style={styles.whyTitle}>Why install?</h4>
-          <div style={styles.benefits}>
-            <div style={styles.benefit}>
-              <span style={styles.benefitIcon}>📱</span>
-              <span>Full-screen experience</span>
-            </div>
-            <div style={styles.benefit}>
-              <span style={styles.benefitIcon}>⚡</span>
-              <span>Faster performance</span>
-            </div>
-            <div style={styles.benefit}>
-              <span style={styles.benefitIcon}>🎯</span>
-              <span>Dedicated app experience</span>
+        {/* Why install section - only show if not already installed */}
+        {!isInstalled && (
+          <div style={styles.whySection}>
+            <h4 style={styles.whyTitle}>Why install?</h4>
+            <div style={styles.benefits}>
+              <div style={styles.benefit}>
+                <span style={styles.benefitIcon}>📱</span>
+                <span>Full-screen experience</span>
+              </div>
+              <div style={styles.benefit}>
+                <span style={styles.benefitIcon}>⚡</span>
+                <span>Faster performance</span>
+              </div>
+              <div style={styles.benefit}>
+                <span style={styles.benefitIcon}>🎯</span>
+                <span>Dedicated app experience</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Install button for Chrome/Edge */}
-        {deferredPrompt && (
+        {/* Install button for Chrome/Edge - only show if not already installed */}
+        {!isInstalled && deferredPrompt && (
           <button onClick={handleInstallClick} style={styles.installButton}>
             Install App
           </button>
         )}
 
+        {/* Open app link - show if already installed */}
+        {isInstalled && (
+          <div style={styles.openAppSection}>
+            <a href="/" style={styles.openAppLink}>
+              Try Opening App
+            </a>
+            <p style={styles.openAppHint}>
+              If this doesn't work, use the instructions below
+            </p>
+          </div>
+        )}
+
         {/* Instructions */}
         <div style={styles.instructions}>
-          <h4 style={styles.instructionsTitle}>Installation steps:</h4>
+          <h4 style={styles.instructionsTitle}>
+            {isInstalled ? 'How to open the app:' : 'Installation steps:'}
+          </h4>
           {instructions.steps.map((step, index) => (
             <div key={index} style={styles.step}>
               <span style={styles.stepNumber}>{index + 1}</span>
@@ -320,6 +425,41 @@ const styles = {
   },
   stepText: {
     flex: 1,
+  },
+  loadingIcon: {
+    fontSize: '72px',
+    marginBottom: '24px',
+    animation: 'pulse 2s ease-in-out infinite',
+  },
+  loadingText: {
+    fontSize: '18px',
+    fontFamily: "'Inter', sans-serif",
+    color: 'var(--text-secondary)',
+  },
+  openAppSection: {
+    marginBottom: '24px',
+    textAlign: 'center',
+  },
+  openAppLink: {
+    display: 'inline-block',
+    background: 'var(--gradient-coffee)',
+    color: 'var(--cream)',
+    textDecoration: 'none',
+    borderRadius: '16px',
+    padding: '18px 32px',
+    fontSize: '18px',
+    fontWeight: '600',
+    fontFamily: "'Poppins', sans-serif",
+    boxShadow: 'var(--shadow-md)',
+    transition: 'all 0.2s ease',
+    marginBottom: '12px',
+  },
+  openAppHint: {
+    fontSize: '13px',
+    fontFamily: "'Inter', sans-serif",
+    color: 'var(--text-secondary)',
+    marginTop: '12px',
+    fontStyle: 'italic',
   }
 };
 

@@ -27,6 +27,7 @@
     }
   ],
   "categories": ["business", "productivity"],
+  "prefer_related_applications": false,
   "screenshots": [],
   "shortcuts": [
     {
