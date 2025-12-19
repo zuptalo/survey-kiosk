@@ -182,16 +182,17 @@ function AdminDashboard() {
 
   return (
     <div className="container">
-      <LanguageSwitcher />
-
       <div className="page-header" style={styles.header}>
         <div>
           <h1 className="page-title">{t('admin_dashboard')}</h1>
           <p className="page-subtitle">{surveys.length} {t('surveys_count')}</p>
         </div>
-        <button onClick={handleLogout} className="btn btn-danger">
-          {t('logout')}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <LanguageSwitcher compact />
+          <button onClick={handleLogout} className="btn btn-danger">
+            {t('logout')}
+          </button>
+        </div>
       </div>
 
       {error && (

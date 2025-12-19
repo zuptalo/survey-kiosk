@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import LanguageSwitcher from '../components/LanguageSwitcher';
 
 function AdminLogin() {
   const { t } = useTranslation();
@@ -31,8 +30,6 @@ function AdminLogin() {
 
   return (
     <div style={styles.container}>
-      <LanguageSwitcher />
-
       <div style={styles.content}>
         <h1 style={styles.title}>{t('admin_login')}</h1>
 

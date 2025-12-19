@@ -361,9 +361,7 @@ function SurveyForm() {
   if (!surveyStarted) {
     return (
       <div style={styles.introContainer}>
-        <LanguageSwitcher />
-
-        {/* Small close button at top left */}
+        {/* Close button at top left */}
         <button
           onClick={() => navigate('/surveys')}
           style={styles.closeButton}
@@ -371,6 +369,12 @@ function SurveyForm() {
         >
           ✕
         </button>
+
+        {/* Language switcher at top right */}
+        <LanguageSwitcher
+          compact
+          style={{ position: 'fixed', top: '24px', right: '24px' }}
+        />
 
         <div style={styles.introContent}>
           {/* Hero Image */}
@@ -411,9 +415,7 @@ function SurveyForm() {
 
   return (
     <div style={styles.container}>
-      <LanguageSwitcher />
-
-      {/* Small close button at top left */}
+      {/* Close button at top left */}
       <button
         onClick={() => navigate('/surveys')}
         style={styles.closeButton}
@@ -421,6 +423,12 @@ function SurveyForm() {
       >
         ✕
       </button>
+
+      {/* Language switcher at top right */}
+      <LanguageSwitcher
+        compact
+        style={{ position: 'fixed', top: '24px', right: '24px' }}
+      />
 
       <div style={styles.header}>
         <h1 style={styles.title}>{getSurveyTitle()}</h1>

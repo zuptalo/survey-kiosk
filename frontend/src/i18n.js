@@ -27,7 +27,7 @@ const resources = {
       "continue_survey": "Continue Survey",
 
       // Admin
-      "admin_dashboard": "Admin Dashboard",
+      "admin_dashboard": "Dashboard",
       "create_new_survey": "New Survey",
       "edit_survey": "Edit",
       "view_results": "Results",
@@ -168,7 +168,7 @@ const resources = {
       "continue_survey": "Fortsätt undersökning",
 
       // Admin
-      "admin_dashboard": "Admin Kontrollpanel",
+      "admin_dashboard": "Dashboard",
       "create_new_survey": "Skapa ny",
       "edit_survey": "Redigera",
       "view_results": "Resultat",

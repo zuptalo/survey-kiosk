@@ -1,14 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from '../components/LanguageSwitcher';
 
 function Home() {
   const { t } = useTranslation();
 
   return (
     <div style={styles.container}>
-      <LanguageSwitcher />
-
       <div style={styles.content}>
         <h1 style={styles.title}>{t('welcome')}</h1>
 

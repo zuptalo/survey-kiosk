@@ -221,11 +221,12 @@ function AdminResults() {
 
   return (
     <div className="container">
-      <LanguageSwitcher />
-
-      <div className="page-header">
-        <h1 className="page-title">{getSurveyTitle()}</h1>
-        {getSurveyDescription() && <p className="page-subtitle">{getSurveyDescription()}</p>}
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1 className="page-title">{getSurveyTitle()}</h1>
+          {getSurveyDescription() && <p className="page-subtitle">{getSurveyDescription()}</p>}
+        </div>
+        <LanguageSwitcher compact />
       </div>
 
       {/* Overall statistics */}

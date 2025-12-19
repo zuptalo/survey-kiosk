@@ -323,10 +323,9 @@ function AdminEditSurvey() {
 
   return (
     <div className="container">
-      <LanguageSwitcher />
-
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 className="page-title">{t('edit_survey')}</h1>
+        <LanguageSwitcher compact />
       </div>
 
       {error && <div className="error-message">{error}</div>}

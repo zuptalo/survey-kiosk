@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { surveyService } from '../services/surveyService';
-import LanguageSwitcher from '../components/LanguageSwitcher';
 
 function SurveyList() {
   const { t, i18n } = useTranslation();
@@ -61,8 +60,6 @@ function SurveyList() {
 
   return (
     <div style={styles.container}>
-      <LanguageSwitcher />
-
       {/* Small close button at top left */}
       <button
         onClick={() => navigate('/')}
