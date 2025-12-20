@@ -8,7 +8,7 @@ const urlsToCache = [
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
-  '/favicon.ico'
+  '/favicon.png'
 ];
 
 // Install event - cache resources
@@ -18,7 +18,14 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Service Worker: Caching files');
-        return cache.addAll(urlsToCache);
+        // Cache files individually to avoid failure if one is missing
+        return Promise.allSettled(
+          urlsToCache.map((url) =>
+            cache.add(url).catch((err) => {
+              console.warn(`Service Worker: Failed to cache ${url}:`, err);
+            })
+          )
+        );
       })
       .then(() => {
         console.log('Service Worker: Skip waiting and activate immediately');

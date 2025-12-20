@@ -124,40 +124,42 @@ function AdminResults() {
           <p style={styles.noResponses}>{t('no_responses_yet')}</p>
         ) : (
           <>
-            <div style={styles.table}>
-              {/* Header */}
-              <div style={styles.tableHeader}>
-                <div style={styles.tableCell}>{t('item')}</div>
-                <div style={styles.tableCell}>{t('selection_count')}</div>
-                <div style={styles.tableCell}>{t('percentage')}</div>
-                <div style={styles.tableCell}>{t('visual')}</div>
-              </div>
-
-              {/* Rows */}
+            <div style={styles.resultsGrid}>
               {questionStats.map((stat) => {
                 return (
-                  <div key={stat.item_id} style={styles.tableRow}>
-                    <div style={styles.tableCell}>
+                  <div key={stat.item_id} style={styles.resultCard}>
+                    {/* Item info with optional image */}
+                    <div style={styles.cardHeader}>
                       {stat.image && (
                         <img
                           src={`/images/${stat.image}`}
                           alt=""
-                          style={styles.thumbnail}
+                          style={styles.cardThumbnail}
                         />
                       )}
-                      <span>{getItemText(stat)}</span>
+                      <div style={styles.cardTitle}>{getItemText(stat)}</div>
                     </div>
-                    <div style={styles.tableCell}>{stat.count}</div>
-                    <div style={styles.tableCell}>{stat.percentage.toFixed(1)}%</div>
-                    <div style={styles.tableCell}>
-                      <div style={styles.progressBar}>
-                        <div
-                          style={{
-                            ...styles.progressFill,
-                            width: `${stat.percentage}%`
-                          }}
-                        />
+
+                    {/* Statistics */}
+                    <div style={styles.cardStats}>
+                      <div style={styles.statItem}>
+                        <div style={styles.cardStatLabel}>{t('selection_count')}</div>
+                        <div style={styles.cardStatValue}>{stat.count}</div>
                       </div>
+                      <div style={styles.statItem}>
+                        <div style={styles.cardStatLabel}>{t('percentage')}</div>
+                        <div style={styles.cardStatValue}>{stat.percentage.toFixed(1)}%</div>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div style={styles.cardProgressBar}>
+                      <div
+                        style={{
+                          ...styles.cardProgressFill,
+                          width: `${stat.percentage}%`
+                        }}
+                      />
                     </div>
                   </div>
                 );
@@ -169,26 +171,25 @@ function AdminResults() {
                 <h3 style={styles.popularTitle}>
                   {mostSelected.length > 1 ? t('most_popular_tied') : t('most_popular')}
                 </h3>
-                {mostSelected.map((item, index) => (
-                  <div key={item.id || index} style={{
-                    ...styles.popularItem,
-                    ...(index > 0 ? { marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(232, 220, 200, 0.6)' } : {})
-                  }}>
-                    {item.image && (
-                      <img
-                        src={`/images/${item.image}`}
-                        alt=""
-                        style={styles.popularImage}
-                      />
-                    )}
-                    <div>
-                      <div style={styles.popularText}>{getItemText(item)}</div>
-                      <div style={styles.popularStats}>
-                        {item.count} {t('selections')} ({item.percentage.toFixed(1)}%)
+                <div style={styles.popularGrid}>
+                  {mostSelected.map((item, index) => (
+                    <div key={item.id || index} style={styles.popularItem}>
+                      {item.image && (
+                        <img
+                          src={`/images/${item.image}`}
+                          alt=""
+                          style={styles.popularImage}
+                        />
+                      )}
+                      <div>
+                        <div style={styles.popularText}>{getItemText(item)}</div>
+                        <div style={styles.popularStats}>
+                          {item.count} {t('selections')} ({item.percentage.toFixed(1)}%)
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </>
@@ -337,58 +338,84 @@ const styles = {
     padding: '20px',
     textAlign: 'center',
   },
-  table: {
-    display: 'flex',
-    flexDirection: 'column',
+  resultsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+    gap: '20px',
     marginBottom: '24px',
   },
-  tableHeader: {
-    display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr 2fr',
-    gap: '12px',
-    padding: '16px',
-    background: 'var(--gradient-warm)',
-    borderRadius: '12px',
-    fontWeight: '600',
-    marginBottom: '12px',
-    fontFamily: "'Poppins', sans-serif",
-    color: 'var(--espresso)',
+  resultCard: {
+    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 247, 242, 0.95) 100%)',
+    borderRadius: '16px',
+    padding: '20px',
+    border: '1px solid rgba(232, 220, 200, 0.5)',
+    boxShadow: 'var(--shadow-md)',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
   },
-  tableRow: {
-    display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr 2fr',
-    gap: '12px',
-    padding: '16px',
-    borderBottom: '1px solid rgba(232, 220, 200, 0.4)',
-    alignItems: 'center',
-    transition: 'background 0.2s ease',
+  cardHeader: {
+    marginBottom: '16px',
   },
-  tableCell: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    color: 'var(--text-primary)',
-  },
-  thumbnail: {
-    width: '80px',
-    height: '45px', // 16:9 aspect ratio
+  cardThumbnail: {
+    width: '100%',
+    aspectRatio: '16 / 9',
     objectFit: 'cover',
-    borderRadius: '8px',
+    borderRadius: '12px',
+    marginBottom: '12px',
     boxShadow: 'var(--shadow-sm)',
   },
-  progressBar: {
+  cardTitle: {
+    fontSize: '18px',
+    fontWeight: '600',
+    color: 'var(--espresso)',
+    fontFamily: "'Poppins', sans-serif",
+    marginBottom: '12px',
+    lineHeight: '1.4',
+  },
+  cardStats: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '12px',
+    marginBottom: '16px',
+  },
+  statItem: {
+    background: 'rgba(107, 68, 35, 0.05)',
+    borderRadius: '12px',
+    padding: '12px',
+    textAlign: 'center',
+  },
+  cardStatLabel: {
+    fontSize: '12px',
+    color: 'var(--text-secondary)',
+    marginBottom: '4px',
+    fontFamily: "'Inter', sans-serif",
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+  },
+  cardStatValue: {
+    fontSize: '24px',
+    fontWeight: '700',
+    color: 'var(--espresso)',
+    fontFamily: "'Poppins', sans-serif",
+  },
+  cardProgressBar: {
     width: '100%',
-    height: '28px',
+    height: '32px',
     background: 'rgba(232, 220, 200, 0.4)',
-    borderRadius: '14px',
+    borderRadius: '16px',
     overflow: 'hidden',
     border: '1px solid rgba(232, 220, 200, 0.6)',
   },
-  progressFill: {
+  cardProgressFill: {
     height: '100%',
     background: 'var(--gradient-coffee)',
     transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
     boxShadow: 'inset 0 2px 4px rgba(255, 255, 255, 0.3)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingRight: '8px',
+    minWidth: '40px',
   },
   mostPopular: {
     background: 'var(--gradient-sunset)',
@@ -400,18 +427,32 @@ const styles = {
   popularTitle: {
     fontSize: '18px',
     color: 'var(--espresso)',
-    marginBottom: '16px',
+    marginBottom: '20px',
     fontFamily: "'Poppins', sans-serif",
     fontWeight: '600',
   },
-  popularItem: {
-    display: 'flex',
-    alignItems: 'center',
+  popularGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
     gap: '20px',
   },
+  popularItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '12px',
+    textAlign: 'center',
+    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 247, 242, 0.95) 100%)',
+    borderRadius: '16px',
+    padding: '20px',
+    border: '1px solid rgba(232, 220, 200, 0.5)',
+    boxShadow: 'var(--shadow-md)',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+  },
   popularImage: {
-    width: '160px',
-    height: '90px', // 16:9 aspect ratio
+    width: '100%',
+    maxWidth: '300px',
+    aspectRatio: '16 / 9',
     objectFit: 'cover',
     borderRadius: '12px',
     boxShadow: 'var(--shadow-md)',

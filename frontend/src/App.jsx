@@ -21,26 +21,64 @@ function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [splashShown, setSplashShown] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [standaloneChecked, setStandaloneChecked] = useState(false);
 
   // Enable fullscreen handling
   useFullscreen();
 
   useEffect(() => {
-    // Check if app is running as installed PWA (standalone mode)
-    const standalone = window.matchMedia('(display-mode: standalone)').matches ||
-                      window.navigator.standalone ||
-                      document.referrer.includes('android-app://');
+    // Listen for the appinstalled event (fires when PWA is installed via browser UI)
+    const handleAppInstalled = () => {
+      console.log('PWA was installed');
+      sessionStorage.setItem('justInstalled', 'true');
+    };
 
-    setIsStandalone(standalone);
+    window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Check if splash was already shown in this session
-    const splashShownInSession = sessionStorage.getItem('splashShown');
+    let retryCount = 0;
+    const maxRetries = 20; // Increased to 20 retries (2 seconds total)
+    const retryInterval = 100; // Check every 100ms
 
-    if (splashShownInSession) {
-      // Already shown in this session, skip splash
-      setShowSplash(false);
-      setSplashShown(true);
-    }
+    const checkStandaloneMode = () => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+                        window.navigator.standalone ||
+                        document.referrer.includes('android-app://');
+
+      // Check if user just completed installation (flag set by RequireInstallation or browser install)
+      const justInstalledFlag = sessionStorage.getItem('justInstalled');
+
+      // If we detect standalone mode, just installed flag, or we've exhausted retries
+      if (standalone || justInstalledFlag || retryCount >= maxRetries) {
+        setIsStandalone(standalone || justInstalledFlag === 'true');
+        setStandaloneChecked(true);
+
+        // Clear the flag after using it
+        if (justInstalledFlag) {
+          sessionStorage.removeItem('justInstalled');
+        }
+
+        // Check if splash was already shown in this session
+        const splashShownInSession = sessionStorage.getItem('splashShown');
+
+        if (splashShownInSession) {
+          // Already shown in this session, skip splash
+          setShowSplash(false);
+          setSplashShown(true);
+        }
+      } else {
+        // Retry after interval
+        retryCount++;
+        setTimeout(checkStandaloneMode, retryInterval);
+      }
+    };
+
+    // Start checking after a small initial delay
+    const timer = setTimeout(checkStandaloneMode, 100);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
   }, []);
 
   const handleSplashComplete = () => {
@@ -49,6 +87,15 @@ function App() {
     // Mark splash as shown in this session
     sessionStorage.setItem('splashShown', 'true');
   };
+
+  // Wait for standalone detection to complete
+  if (!standaloneChecked) {
+    return (
+      <div className="loading">
+        <div className="spinner"></div>
+      </div>
+    );
+  }
 
   // Force installation - show requirement screen if not running as PWA
   if (!isStandalone) {

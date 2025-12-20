@@ -1,7 +1,7 @@
 {
-  "name": "Dream Dose Survey Kiosk",
+  "name": "Survey Kiosk",
   "short_name": "Survey Kiosk",
-  "description": "Tile-based feedback collection system for Dream Dose Cafe",
+  "description": "Tile-based feedback collection system",
   "start_url": "/",
   "display": "fullscreen",
   "background_color": "#faf7f2",
@@ -12,23 +12,44 @@
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/icon.png",
+      "src": "/icon-192-maskable.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["business", "productivity"],
   "prefer_related_applications": false,
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Survey Kiosk Desktop"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "label": "Survey Kiosk Mobile"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Take Survey",

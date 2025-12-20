@@ -9,6 +9,9 @@ function RequireInstallation() {
   const [checkingInstallation, setCheckingInstallation] = useState(true);
 
   useEffect(() => {
+    // Debug: Log user agent
+    console.log('User Agent:', navigator.userAgent);
+
     // Check if app is already installed using getInstalledRelatedApps API
     const checkIfInstalled = async () => {
       try {
@@ -51,11 +54,19 @@ function RequireInstallation() {
 
     // Listen for the beforeinstallprompt event (Chrome/Edge)
     const handleBeforeInstallPrompt = (e) => {
+      console.log('beforeinstallprompt event fired!');
       e.preventDefault();
       setDeferredPrompt(e);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Check after a delay if event fired
+    setTimeout(() => {
+      if (!deferredPrompt) {
+        console.log('beforeinstallprompt event did NOT fire - PWA may already be installed or dismissed');
+      }
+    }, 3000);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -69,11 +80,18 @@ function RequireInstallation() {
 
       if (outcome === 'accepted') {
         console.log('User accepted the install prompt');
+        // Set flag to indicate app was just installed
+        sessionStorage.setItem('justInstalled', 'true');
       }
 
       setDeferredPrompt(null);
     }
   };
+
+  // Debug: Log the state
+  useEffect(() => {
+    console.log('RequireInstallation state:', { isInstalled, deferredPrompt: !!deferredPrompt, platform });
+  }, [isInstalled, deferredPrompt, platform]);
 
   const getOpenInstructions = () => {
     switch (platform) {
@@ -196,7 +214,8 @@ function RequireInstallation() {
     );
   }
 
-  const instructions = isInstalled ? getOpenInstructions() : getInstallInstructions();
+  // Show install instructions if we have the install prompt, otherwise check if installed
+  const instructions = (deferredPrompt || !isInstalled) ? getInstallInstructions() : getOpenInstructions();
 
   return (
     <div style={styles.container}>
@@ -217,8 +236,8 @@ function RequireInstallation() {
         <h3 style={styles.title}>{instructions.title}</h3>
         <p style={styles.subtitle}>{instructions.subtitle}</p>
 
-        {/* Why install section - only show if not already installed */}
-        {!isInstalled && (
+        {/* Why install section - only show if not already installed or install button is available */}
+        {(!isInstalled || deferredPrompt) && (
           <div style={styles.whySection}>
             <h4 style={styles.whyTitle}>Why install?</h4>
             <div style={styles.benefits}>
@@ -238,15 +257,15 @@ function RequireInstallation() {
           </div>
         )}
 
-        {/* Install button for Chrome/Edge - only show if not already installed */}
-        {!isInstalled && deferredPrompt && (
+        {/* Install button for Chrome/Edge - prioritize showing if available */}
+        {deferredPrompt && (
           <button onClick={handleInstallClick} style={styles.installButton}>
             Install App
           </button>
         )}
 
-        {/* Open app link - show if already installed */}
-        {isInstalled && (
+        {/* Open app link - show if already installed and no install button */}
+        {isInstalled && !deferredPrompt && (
           <div style={styles.openAppSection}>
             <a href="/" style={styles.openAppLink}>
               Try Opening App
@@ -260,7 +279,7 @@ function RequireInstallation() {
         {/* Instructions */}
         <div style={styles.instructions}>
           <h4 style={styles.instructionsTitle}>
-            {isInstalled ? 'How to open the app:' : 'Installation steps:'}
+            {(deferredPrompt || !isInstalled) ? 'Installation steps:' : 'How to open the app:'}
           </h4>
           {instructions.steps.map((step, index) => (
             <div key={index} style={styles.step}>
