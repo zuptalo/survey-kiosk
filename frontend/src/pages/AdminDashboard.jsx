@@ -188,7 +188,9 @@ function AdminDashboard() {
           <p className="page-subtitle">{surveys.length} {t('surveys_count')}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <LanguageSwitcher compact />
+          <Link to="/admin/settings" className="btn btn-secondary">
+            ⚙ {t('settings')}
+          </Link>
           <button onClick={handleLogout} className="btn btn-danger">
             {t('logout')}
           </button>
@@ -358,11 +360,10 @@ const styles = {
   },
   surveyCard: {
     position: 'relative',
-    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 247, 242, 0.95) 100%)',
   },
   surveyTitle: {
     fontSize: '24px',
-    color: 'var(--espresso)',
+    color: 'var(--text-primary)',
     marginBottom: '10px',
     fontFamily: "'Poppins', sans-serif",
     fontWeight: '600',

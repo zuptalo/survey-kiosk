@@ -141,6 +141,16 @@ const resources = {
       "next": "Next",
       "previous": "Previous",
       "of": "of",
+
+      // Settings
+      "settings": "Settings",
+      "configure_appearance_language": "Configure appearance and language settings",
+      "theme": "Theme",
+      "choose_color_scheme": "Choose your preferred color scheme",
+      "language": "Language",
+      "choose_default_language": "Choose your default language",
+      "current_language": "Current Language",
+      "selections": "selections",
     }
   },
   sv: {
@@ -282,6 +292,16 @@ const resources = {
       "next": "Nästa",
       "previous": "Föregående",
       "of": "av",
+
+      // Settings
+      "settings": "Inställningar",
+      "configure_appearance_language": "Konfigurera utseende och språkinställningar",
+      "theme": "Tema",
+      "choose_color_scheme": "Välj ditt föredragna färgschema",
+      "language": "Språk",
+      "choose_default_language": "Välj ditt standardspråk",
+      "current_language": "Nuvarande språk",
+      "selections": "val",
     }
   }
 };

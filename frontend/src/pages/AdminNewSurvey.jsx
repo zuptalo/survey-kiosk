@@ -545,7 +545,7 @@ const styles = {
   },
   sectionTitle: {
     fontSize: '18px',
-    color: 'var(--primary-brown)',
+    color: 'var(--text-primary)',
     marginBottom: '16px',
     fontWeight: '600',
   },
@@ -554,7 +554,6 @@ const styles = {
   },
   questionCard: {
     marginBottom: '24px',
-    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 247, 242, 0.95) 100%)',
     padding: '24px',
   },
   questionHeader: {
@@ -570,12 +569,12 @@ const styles = {
   },
   itemsTitle: {
     fontSize: '16px',
-    color: 'var(--primary-brown)',
+    color: 'var(--text-primary)',
     marginBottom: '12px',
   },
   item: {
     marginBottom: '16px',
-    background: 'var(--beige)',
+    background: 'var(--bg-tertiary)',
     padding: '16px',
   },
   itemHeader: {

@@ -93,112 +93,38 @@ function RequireInstallation() {
     console.log('RequireInstallation state:', { isInstalled, deferredPrompt: !!deferredPrompt, platform });
   }, [isInstalled, deferredPrompt, platform]);
 
-  const getOpenInstructions = () => {
-    switch (platform) {
-      case 'ios-safari':
-        return {
-          icon: '✨',
-          title: 'App Already Installed!',
-          subtitle: `${appName} is already installed on your device`,
-          steps: [
-            'Go to your home screen',
-            `Look for the "${appName}" app icon ☕`,
-            'Tap to open the app',
-            'Enjoy the full-screen experience!'
-          ]
-        };
-      case 'android-chrome':
-        return {
-          icon: '✨',
-          title: 'App Already Installed!',
-          subtitle: `${appName} is already installed on your device`,
-          steps: [
-            'Open your app drawer or home screen',
-            `Look for the "${appName}" app`,
-            'Tap to open the app',
-            'Enjoy the full-screen experience!'
-          ]
-        };
-      case 'desktop-chrome':
-        return {
-          icon: '✨',
-          title: 'App Already Installed!',
-          subtitle: `${appName} is already installed on your computer`,
-          steps: [
-            'Check your applications/programs',
-            'Or look in your browser\'s app menu',
-            `Click "${appName}" to open`,
-            'Enjoy the dedicated app experience!'
-          ]
-        };
-      default:
-        return {
-          icon: '✨',
-          title: 'App Already Installed!',
-          subtitle: `${appName} is already installed`,
-          steps: [
-            'Find the app in your apps/home screen',
-            `Open "${appName}"`,
-            'Enjoy the app experience!'
-          ]
-        };
-    }
-  };
-
   const getInstallInstructions = () => {
     switch (platform) {
       case 'ios-safari':
-        return {
-          icon: '📱',
-          title: 'Install Required',
-          subtitle: 'This app must be installed to work properly',
-          steps: [
-            'Tap the Share button ⬆️ at the bottom',
-            'Scroll down and tap "Add to Home Screen"',
-            'Tap "Add" to complete installation',
-            'Open the app from your home screen'
-          ]
-        };
+        return [
+          'Tap the Share button ⬆️',
+          'Select "Add to Home Screen"',
+          'Tap "Add" to install',
+          'Open from your home screen'
+        ];
       case 'android-chrome':
-        return {
-          icon: '📱',
-          title: 'Install Required',
-          subtitle: 'This app must be installed to work properly',
-          steps: deferredPrompt
-            ? ['Tap the "Install App" button below to get started']
-            : [
-                'Tap the menu (⋮) in the top right',
-                'Tap "Add to Home screen" or "Install app"',
-                'Tap "Install" to complete',
-                'Open the app from your home screen'
-              ]
-        };
+        return deferredPrompt
+          ? ['Tap "Install" below']
+          : [
+              'Tap menu (⋮) → "Add to Home screen"',
+              'Tap "Install"',
+              'Open from your home screen'
+            ];
       case 'desktop-chrome':
-        return {
-          icon: '💻',
-          title: 'Install Required',
-          subtitle: 'This app must be installed to work properly',
-          steps: deferredPrompt
-            ? ['Click the "Install App" button below to get started']
-            : [
-                'Look for the install icon ⊕ in the address bar',
-                `Or go to menu (⋮) → "Install ${appName}"`,
-                'Click "Install" to complete',
-                'Open the app from your applications'
-              ]
-        };
+        return deferredPrompt
+          ? ['Click "Install" below']
+          : [
+              'Look for install icon ⊕ in address bar',
+              'Or menu (⋮) → "Install..."',
+              'Click "Install"'
+            ];
       default:
-        return {
-          icon: '📱',
-          title: 'Install Required',
-          subtitle: 'This app must be installed to work properly',
-          steps: [
-            'Look for "Add to Home Screen" or "Install" option',
-            'Check your browser menu or share options',
-            'Install the app to continue',
-            'Open the installed app to use it'
-          ]
-        };
+        return [
+          'Look for "Add to Home Screen"',
+          'Or "Install" in browser menu',
+          'Complete installation',
+          'Open the installed app'
+        ];
     }
   };
 
@@ -207,87 +133,45 @@ function RequireInstallation() {
     return (
       <div style={styles.container}>
         <div style={styles.content}>
-          <div style={styles.loadingIcon}>☕</div>
-          <p style={styles.loadingText}>Checking installation...</p>
+          <img src="/icon-192.png" alt={appName} style={styles.loadingIcon} />
+          <p style={styles.loadingText}>Checking...</p>
         </div>
       </div>
     );
   }
 
-  // Show install instructions if we have the install prompt, otherwise check if installed
-  const instructions = (deferredPrompt || !isInstalled) ? getInstallInstructions() : getOpenInstructions();
+  const instructions = getInstallInstructions();
 
   return (
     <div style={styles.container}>
       <div style={styles.content}>
-        {/* Icon */}
-        <div style={styles.iconContainer}>
-          <div style={styles.icon}>{instructions.icon}</div>
-        </div>
+        {/* App Icon */}
+        <img src="/icon-192.png" alt={appName} style={styles.appIcon} />
 
-        {/* App branding */}
-        <div style={styles.branding}>
-          <div style={styles.coffeeIcon}>☕</div>
-          <h1 style={styles.appName}>{appName}</h1>
-          <h2 style={styles.appSubtitle}>Survey Kiosk</h2>
-        </div>
+        {/* App Name */}
+        <h1 style={styles.appName}>{appName}</h1>
 
-        {/* Title */}
-        <h3 style={styles.title}>{instructions.title}</h3>
-        <p style={styles.subtitle}>{instructions.subtitle}</p>
-
-        {/* Why install section - only show if not already installed or install button is available */}
-        {(!isInstalled || deferredPrompt) && (
-          <div style={styles.whySection}>
-            <h4 style={styles.whyTitle}>Why install?</h4>
-            <div style={styles.benefits}>
-              <div style={styles.benefit}>
-                <span style={styles.benefitIcon}>📱</span>
-                <span>Full-screen experience</span>
-              </div>
-              <div style={styles.benefit}>
-                <span style={styles.benefitIcon}>⚡</span>
-                <span>Faster performance</span>
-              </div>
-              <div style={styles.benefit}>
-                <span style={styles.benefitIcon}>🎯</span>
-                <span>Dedicated app experience</span>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Message */}
+        <p style={styles.message}>Installation Required</p>
 
         {/* Install button for Chrome/Edge - prioritize showing if available */}
         {deferredPrompt && (
           <button onClick={handleInstallClick} style={styles.installButton}>
-            Install App
+            Install
           </button>
         )}
 
-        {/* Open app link - show if already installed and no install button */}
-        {isInstalled && !deferredPrompt && (
-          <div style={styles.openAppSection}>
-            <a href="/" style={styles.openAppLink}>
-              Try Opening App
-            </a>
-            <p style={styles.openAppHint}>
-              If this doesn't work, use the instructions below
-            </p>
+        {/* Instructions */}
+        {(!deferredPrompt || isInstalled) && (
+          <div style={styles.instructions}>
+            {instructions.map((step, index) => (
+              <div key={index} style={styles.step}>
+                <span style={styles.stepNumber}>{index + 1}</span>
+                <span style={styles.stepText}>{step}</span>
+              </div>
+            ))}
           </div>
         )}
-
-        {/* Instructions */}
-        <div style={styles.instructions}>
-          <h4 style={styles.instructionsTitle}>
-            {(deferredPrompt || !isInstalled) ? 'Installation steps:' : 'How to open the app:'}
-          </h4>
-          {instructions.steps.map((step, index) => (
-            <div key={index} style={styles.step}>
-              <span style={styles.stepNumber}>{index + 1}</span>
-              <span style={styles.stepText}>{step}</span>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -300,187 +184,103 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'var(--gradient-coffee)',
+    background: 'var(--gradient-bg)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     padding: '20px',
-    overflow: 'auto',
+    overflow: 'hidden',
   },
   content: {
-    maxWidth: '600px',
+    maxWidth: '400px',
     width: '100%',
-    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 247, 242, 0.98) 100%)',
-    borderRadius: '24px',
-    padding: '48px 32px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
     textAlign: 'center',
-  },
-  iconContainer: {
-    marginBottom: '24px',
-  },
-  icon: {
-    fontSize: '72px',
-    animation: 'pulse 2s ease-in-out infinite',
-  },
-  branding: {
-    marginBottom: '32px',
-    paddingBottom: '32px',
-    borderBottom: '2px solid rgba(107, 68, 35, 0.1)',
-  },
-  coffeeIcon: {
-    fontSize: '48px',
-    marginBottom: '16px',
-  },
-  appName: {
-    fontSize: '2.5rem',
-    fontWeight: '700',
-    fontFamily: "'Poppins', sans-serif",
-    color: 'var(--espresso)',
-    marginBottom: '8px',
-    letterSpacing: '-0.02em',
-  },
-  appSubtitle: {
-    fontSize: '1.25rem',
-    fontWeight: '400',
-    fontFamily: "'Inter', sans-serif",
-    color: 'var(--text-secondary)',
-    letterSpacing: '0.05em',
-  },
-  title: {
-    fontSize: '28px',
-    fontWeight: '700',
-    fontFamily: "'Poppins', sans-serif",
-    color: 'var(--espresso)',
-    marginBottom: '12px',
-  },
-  subtitle: {
-    fontSize: '16px',
-    fontFamily: "'Inter', sans-serif",
-    color: 'var(--text-secondary)',
-    marginBottom: '32px',
-    lineHeight: '1.6',
-  },
-  whySection: {
-    background: 'rgba(107, 68, 35, 0.05)',
-    borderRadius: '16px',
-    padding: '24px',
-    marginBottom: '32px',
-  },
-  whyTitle: {
-    fontSize: '18px',
-    fontWeight: '600',
-    fontFamily: "'Poppins', sans-serif",
-    color: 'var(--espresso)',
-    marginBottom: '16px',
-  },
-  benefits: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '12px',
-  },
-  benefit: {
-    display: 'flex',
     alignItems: 'center',
-    gap: '12px',
-    fontSize: '15px',
-    fontWeight: '500',
-    color: 'var(--text-primary)',
-    textAlign: 'left',
+    gap: '20px',
   },
-  benefitIcon: {
-    fontSize: '24px',
-    flexShrink: 0,
+  appIcon: {
+    width: '120px',
+    height: '120px',
+    borderRadius: '24px',
+    boxShadow: 'var(--shadow-lg)',
+  },
+  appName: {
+    fontSize: 'clamp(1.75rem, 5vw, 2.5rem)',
+    fontWeight: '700',
+    fontFamily: "'Poppins', sans-serif",
+    color: 'var(--espresso)',
+    margin: 0,
+    letterSpacing: '-0.02em',
+  },
+  message: {
+    fontSize: 'clamp(1rem, 3vw, 1.25rem)',
+    fontFamily: "'Inter', sans-serif",
+    color: 'var(--text-secondary)',
+    margin: 0,
   },
   installButton: {
     width: '100%',
+    maxWidth: '280px',
     background: 'var(--gradient-coffee)',
     color: 'var(--cream)',
     border: 'none',
     borderRadius: '16px',
-    padding: '18px',
-    fontSize: '18px',
+    padding: 'clamp(14px, 3vw, 18px) clamp(24px, 5vw, 32px)',
+    fontSize: 'clamp(16px, 3vw, 18px)',
     fontWeight: '600',
     fontFamily: "'Poppins', sans-serif",
     cursor: 'pointer',
-    marginBottom: '24px',
-    boxShadow: 'var(--shadow-md)',
-    transition: 'all 0.2s ease',
+    boxShadow: 'var(--shadow-lg)',
+    transition: 'all 0.3s ease',
+    marginTop: '8px',
   },
   instructions: {
-    background: 'rgba(107, 68, 35, 0.05)',
-    borderRadius: '16px',
-    padding: '24px',
-    textAlign: 'left',
-  },
-  instructionsTitle: {
-    fontSize: '18px',
-    fontWeight: '600',
-    fontFamily: "'Poppins', sans-serif",
-    color: 'var(--espresso)',
-    marginBottom: '16px',
-    textAlign: 'center',
+    width: '100%',
+    maxWidth: '320px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 'clamp(10px, 2vw, 12px)',
+    marginTop: '8px',
   },
   step: {
     display: 'flex',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: '12px',
-    marginBottom: '12px',
-    fontSize: '15px',
+    fontSize: 'clamp(13px, 2.5vw, 15px)',
     color: 'var(--text-primary)',
-    lineHeight: '1.5',
+    textAlign: 'left',
+    lineHeight: '1.4',
   },
   stepNumber: {
     background: 'var(--gradient-coffee)',
     color: 'var(--cream)',
-    width: '28px',
-    height: '28px',
+    width: 'clamp(24px, 5vw, 28px)',
+    height: 'clamp(24px, 5vw, 28px)',
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '14px',
+    fontSize: 'clamp(12px, 2.5vw, 14px)',
     fontWeight: '600',
     flexShrink: 0,
-    marginTop: '2px',
   },
   stepText: {
     flex: 1,
+    fontFamily: "'Inter', sans-serif",
   },
   loadingIcon: {
-    fontSize: '72px',
-    marginBottom: '24px',
+    width: '120px',
+    height: '120px',
+    borderRadius: '24px',
+    boxShadow: 'var(--shadow-lg)',
     animation: 'pulse 2s ease-in-out infinite',
   },
   loadingText: {
     fontSize: '18px',
     fontFamily: "'Inter', sans-serif",
     color: 'var(--text-secondary)',
-  },
-  openAppSection: {
-    marginBottom: '24px',
-    textAlign: 'center',
-  },
-  openAppLink: {
-    display: 'inline-block',
-    background: 'var(--gradient-coffee)',
-    color: 'var(--cream)',
-    textDecoration: 'none',
-    borderRadius: '16px',
-    padding: '18px 32px',
-    fontSize: '18px',
-    fontWeight: '600',
-    fontFamily: "'Poppins', sans-serif",
-    boxShadow: 'var(--shadow-md)',
-    transition: 'all 0.2s ease',
-    marginBottom: '12px',
-  },
-  openAppHint: {
-    fontSize: '13px',
-    fontFamily: "'Inter', sans-serif",
-    color: 'var(--text-secondary)',
-    marginTop: '12px',
-    fontStyle: 'italic',
   }
 };
 
@@ -489,8 +289,8 @@ if (typeof document !== 'undefined') {
   const style = document.createElement('style');
   style.textContent = `
     @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.05); opacity: 1; }
     }
   `;
   if (!document.querySelector('style[data-require-installation]')) {

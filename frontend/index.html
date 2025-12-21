@@ -17,9 +17,29 @@
     <meta name="apple-mobile-web-app-title" content="Survey Kiosk" />
 
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#6b4423" />
+    <meta name="theme-color" content="#1a1a1a" id="theme-color-meta" />
     <meta name="description" content="Tile-based feedback collection system" />
     <meta name="application-name" content="Survey Kiosk" />
+
+    <!-- Initialize theme before React loads to prevent flash -->
+    <script>
+      (function() {
+        const themeColors = {
+          dark: '#1a1a1a',
+          cafe: '#6b4423',
+          green: '#3d7a3d',
+          blue: '#2878b5',
+          bright: '#ffffff',
+          purple: '#7b3f9f'
+        };
+        const savedTheme = localStorage.getItem('app-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const metaThemeColor = document.getElementById('theme-color-meta');
+        if (metaThemeColor) {
+          metaThemeColor.setAttribute('content', themeColors[savedTheme] || themeColors.dark);
+        }
+      })();
+    </script>
 
     <!-- Manifest -->
     <link rel="manifest" href="/manifest.json" />

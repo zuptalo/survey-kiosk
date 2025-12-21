@@ -55,7 +55,7 @@ function SplashScreen({ onComplete }) {
       <div style={styles.content}>
         {/* Logo/Icon */}
         <div style={styles.iconContainer}>
-          <div style={styles.coffeeIcon}>☕</div>
+          <img src="/icon-192.png" alt={appName} style={styles.coffeeIcon} />
         </div>
 
         {/* App Name */}
@@ -103,7 +103,10 @@ const styles = {
     marginBottom: '32px',
   },
   coffeeIcon: {
-    fontSize: '96px',
+    width: '128px',
+    height: '128px',
+    borderRadius: '28px',
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
     animation: 'pulse 2s ease-in-out infinite',
   },
   appName: {

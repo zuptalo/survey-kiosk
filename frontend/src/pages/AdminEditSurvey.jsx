@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useNotification } from '../context/NotificationContext';
@@ -25,11 +25,7 @@ function AdminEditSurvey() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    loadSurvey();
-  }, [id]);
-
-  const loadSurvey = async () => {
+  const loadSurvey = useCallback(async () => {
     try {
       const survey = await surveyService.getSurvey(id);
       setTitleEn(survey.title_en || '');
@@ -93,10 +89,14 @@ function AdminEditSurvey() {
       setError(err.message);
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const addQuestion = () => {
-    setQuestions([...questions, {
+  useEffect(() => {
+    loadSurvey();
+  }, [loadSurvey]);
+
+  const addQuestion = useCallback(() => {
+    setQuestions(prevQuestions => [...prevQuestions, {
       id: `q_${Date.now()}`,
       text_en: '',
       text_sv: '',
@@ -109,30 +109,32 @@ function AdminEditSurvey() {
         imageFilename: ''
       }]
     }]);
-  };
+  }, []);
 
-  const removeQuestion = (questionId) => {
-    if (questions.length === 1) {
-      showWarning('Survey must have at least one question');
-      return;
-    }
-    setQuestions(questions.filter(q => q.id !== questionId));
-  };
+  const removeQuestion = useCallback((questionId) => {
+    setQuestions(prevQuestions => {
+      if (prevQuestions.length === 1) {
+        showWarning('Survey must have at least one question');
+        return prevQuestions;
+      }
+      return prevQuestions.filter(q => q.id !== questionId);
+    });
+  }, [showWarning]);
 
-  const updateQuestionText = (questionId, field, value) => {
-    setQuestions(questions.map(q =>
+  const updateQuestionText = useCallback((questionId, field, value) => {
+    setQuestions(prevQuestions => prevQuestions.map(q =>
       q.id === questionId ? { ...q, [field]: value } : q
     ));
-  };
+  }, []);
 
-  const updateQuestionSelectionMode = (questionId, mode) => {
-    setQuestions(questions.map(q =>
+  const updateQuestionSelectionMode = useCallback((questionId, mode) => {
+    setQuestions(prevQuestions => prevQuestions.map(q =>
       q.id === questionId ? { ...q, selection_mode: mode } : q
     ));
-  };
+  }, []);
 
-  const addItem = (questionId) => {
-    setQuestions(questions.map(q => {
+  const addItem = useCallback((questionId) => {
+    setQuestions(prevQuestions => prevQuestions.map(q => {
       if (q.id === questionId) {
         return {
           ...q,
@@ -147,10 +149,10 @@ function AdminEditSurvey() {
       }
       return q;
     }));
-  };
+  }, []);
 
-  const removeItem = (questionId, itemId) => {
-    setQuestions(questions.map(q => {
+  const removeItem = useCallback((questionId, itemId) => {
+    setQuestions(prevQuestions => prevQuestions.map(q => {
       if (q.id === questionId) {
         if (q.items.length === 1) {
           showWarning(t('survey_must_have_item'));
@@ -163,10 +165,10 @@ function AdminEditSurvey() {
       }
       return q;
     }));
-  };
+  }, [showWarning, t]);
 
-  const updateItemText = (questionId, itemId, field, value) => {
-    setQuestions(questions.map(q => {
+  const updateItemText = useCallback((questionId, itemId, field, value) => {
+    setQuestions(prevQuestions => prevQuestions.map(q => {
       if (q.id === questionId) {
         return {
           ...q,
@@ -177,9 +179,9 @@ function AdminEditSurvey() {
       }
       return q;
     }));
-  };
+  }, []);
 
-  const handleImageUpload = async (questionId, itemId, file) => {
+  const handleImageUpload = useCallback(async (questionId, itemId, file) => {
     if (!file) return;
 
     try {
@@ -191,7 +193,7 @@ function AdminEditSurvey() {
         // Backend will generate predictable filename, just pass original name for extension
         const filename = file.name;
 
-        setQuestions(questions.map(q => {
+        setQuestions(prevQuestions => prevQuestions.map(q => {
           if (q.id === questionId) {
             return {
               ...q,
@@ -211,10 +213,10 @@ function AdminEditSurvey() {
     } catch (err) {
       showError(err.message);
     }
-  };
+  }, [showError]);
 
-  const removeImage = (questionId, itemId) => {
-    setQuestions(questions.map(q => {
+  const removeImage = useCallback((questionId, itemId) => {
+    setQuestions(prevQuestions => prevQuestions.map(q => {
       if (q.id === questionId) {
         return {
           ...q,
@@ -225,9 +227,9 @@ function AdminEditSurvey() {
       }
       return q;
     }));
-  };
+  }, []);
 
-  const handleHeroImageUpload = async (file) => {
+  const handleHeroImageUpload = useCallback(async (file) => {
     if (!file) return;
 
     try {
@@ -243,14 +245,14 @@ function AdminEditSurvey() {
     } catch (err) {
       showError(err.message);
     }
-  };
+  }, [showError]);
 
-  const removeHeroImage = () => {
+  const removeHeroImage = useCallback(() => {
     setHeroImageData('');
     setHeroImageFilename('');
-  };
+  }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     setError('');
 
@@ -311,7 +313,7 @@ function AdminEditSurvey() {
       setError(err.response?.data?.error || err.message);
       setSaving(false);
     }
-  };
+  }, [titleEn, titleSv, descriptionEn, descriptionSv, startButtonTextEn, startButtonTextSv, heroImageData, questions, id, t, navigate]);
 
   if (loading) {
     return (
@@ -624,7 +626,7 @@ const styles = {
   },
   sectionTitle: {
     fontSize: '18px',
-    color: 'var(--primary-brown)',
+    color: 'var(--text-primary)',
     marginBottom: '16px',
     fontWeight: '600',
   },
@@ -633,7 +635,6 @@ const styles = {
   },
   questionCard: {
     marginBottom: '24px',
-    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 247, 242, 0.95) 100%)',
     padding: '24px',
   },
   questionHeader: {
@@ -649,12 +650,12 @@ const styles = {
   },
   itemsTitle: {
     fontSize: '16px',
-    color: 'var(--primary-brown)',
+    color: 'var(--text-primary)',
     marginBottom: '12px',
   },
   item: {
     marginBottom: '16px',
-    background: 'var(--beige)',
+    background: 'var(--bg-tertiary)',
     padding: '16px',
   },
   itemHeader: {

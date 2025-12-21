@@ -1,8 +1,8 @@
-/* Dream Dose Cafe Theme - Warm & Modern */
+/* Survey Kiosk - Multi-Theme System */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
-:root {
-  /* Warm Coffee Palette */
+/* Café Theme (Warm Coffee Palette) */
+[data-theme="cafe"] {
   --espresso: #2c1810;
   --dark-roast: #3d2817;
   --medium-roast: #6b4423;
@@ -15,6 +15,9 @@
   --accent-cool: #406497;
 
   /* Semantic Colors */
+  --bg-primary: #faf7f2;
+  --bg-secondary: #e8dcc8;
+  --bg-tertiary: #c9a882;
   --text-primary: #2c1810;
   --text-secondary: #6b5d54;
   --text-light: #9a8f87;
@@ -33,6 +36,233 @@
   --gradient-warm: linear-gradient(135deg, #f5f0e8 0%, #e8dcc8 100%);
   --gradient-coffee: linear-gradient(135deg, #6b4423 0%, #3d2817 100%);
   --gradient-sunset: linear-gradient(135deg, #d97757 0%, #c9a882 100%);
+  --gradient-bg: linear-gradient(135deg, #faf7f2 0%, #e8dcc8 50%, #c9a882 100%);
+
+  /* UI Elements */
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-border: rgba(255, 255, 255, 0.5);
+  --input-bg: white;
+  --input-border: #e8dcc8;
+}
+
+/* Green Theme (Natural Green Palette) */
+[data-theme="green"] {
+  --espresso: #1a3a1a;
+  --dark-roast: #2d5a2d;
+  --medium-roast: #3d7a3d;
+  --latte: #6b9b6b;
+  --cappuccino: #a3c9a3;
+  --cream: #e8f4e8;
+  --foam: #f2f9f2;
+  --beige: #d4e8d4;
+  --accent-warm: #8fbc5a;
+  --accent-cool: #4a7c9a;
+
+  /* Semantic Colors */
+  --bg-primary: #f2f9f2;
+  --bg-secondary: #d4e8d4;
+  --bg-tertiary: #a3c9a3;
+  --text-primary: #1a3a1a;
+  --text-secondary: #2d5a2d;
+  --text-light: #6b9b6b;
+  --success: #5a9f4f;
+  --warning: #e8a547;
+  --danger: #d9534f;
+  --info: #5a9fcf;
+
+  /* Shadows & Effects */
+  --shadow-sm: 0 2px 8px rgba(29, 58, 29, 0.08);
+  --shadow-md: 0 4px 16px rgba(29, 58, 29, 0.12);
+  --shadow-lg: 0 8px 32px rgba(29, 58, 29, 0.16);
+  --shadow-xl: 0 12px 48px rgba(29, 58, 29, 0.2);
+
+  /* Gradients */
+  --gradient-warm: linear-gradient(135deg, #e8f4e8 0%, #d4e8d4 100%);
+  --gradient-coffee: linear-gradient(135deg, #3d7a3d 0%, #2d5a2d 100%);
+  --gradient-sunset: linear-gradient(135deg, #8fbc5a 0%, #a3c9a3 100%);
+  --gradient-bg: linear-gradient(135deg, #f2f9f2 0%, #d4e8d4 50%, #a3c9a3 100%);
+
+  /* UI Elements */
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-border: rgba(255, 255, 255, 0.5);
+  --input-bg: white;
+  --input-border: #d4e8d4;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --espresso: #f5f5f5;
+  --dark-roast: #e0e0e0;
+  --medium-roast: #cccccc;
+  --latte: #b0b0b0;
+  --cappuccino: #909090;
+  --cream: #1a1a1a;
+  --foam: #121212;
+  --beige: #2d2d2d;
+  --accent-warm: #ff8a65;
+  --accent-cool: #64b5f6;
+
+  /* Semantic Colors */
+  --bg-primary: #121212;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #2d2d2d;
+  --text-primary: #f5f5f5;
+  --text-secondary: #cccccc;
+  --text-light: #999999;
+  --success: #81c784;
+  --warning: #ffb74d;
+  --danger: #e57373;
+  --info: #64b5f6;
+
+  /* Shadows & Effects */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.7);
+
+  /* Gradients */
+  --gradient-warm: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  --gradient-coffee: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+  --gradient-sunset: linear-gradient(135deg, #ff8a65 0%, #909090 100%);
+  --gradient-bg: linear-gradient(135deg, #121212 0%, #1a1a1a 50%, #2d2d2d 100%);
+
+  /* UI Elements */
+  --card-bg: rgba(26, 26, 26, 0.95);
+  --card-border: rgba(45, 45, 45, 0.8);
+  --input-bg: #1a1a1a;
+  --input-border: #2d2d2d;
+}
+
+/* Blue Theme (Ocean/Sky Palette) */
+[data-theme="blue"] {
+  --espresso: #0d3b66;
+  --dark-roast: #1a5490;
+  --medium-roast: #2878b5;
+  --latte: #5da9db;
+  --cappuccino: #95c8e8;
+  --cream: #e8f4f8;
+  --foam: #f2f9fc;
+  --beige: #d0e8f5;
+  --accent-warm: #f77f00;
+  --accent-cool: #118ab2;
+
+  /* Semantic Colors */
+  --bg-primary: #f2f9fc;
+  --bg-secondary: #d0e8f5;
+  --bg-tertiary: #95c8e8;
+  --text-primary: #0d3b66;
+  --text-secondary: #1a5490;
+  --text-light: #5da9db;
+  --success: #06d6a0;
+  --warning: #ffd166;
+  --danger: #ef476f;
+  --info: #118ab2;
+
+  /* Shadows & Effects */
+  --shadow-sm: 0 2px 8px rgba(13, 59, 102, 0.08);
+  --shadow-md: 0 4px 16px rgba(13, 59, 102, 0.12);
+  --shadow-lg: 0 8px 32px rgba(13, 59, 102, 0.16);
+  --shadow-xl: 0 12px 48px rgba(13, 59, 102, 0.2);
+
+  /* Gradients */
+  --gradient-warm: linear-gradient(135deg, #e8f4f8 0%, #d0e8f5 100%);
+  --gradient-coffee: linear-gradient(135deg, #2878b5 0%, #1a5490 100%);
+  --gradient-sunset: linear-gradient(135deg, #5da9db 0%, #95c8e8 100%);
+  --gradient-bg: linear-gradient(135deg, #f2f9fc 0%, #d0e8f5 50%, #95c8e8 100%);
+
+  /* UI Elements */
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-border: rgba(255, 255, 255, 0.5);
+  --input-bg: white;
+  --input-border: #d0e8f5;
+}
+
+/* Bright Theme (Vibrant Light Palette) */
+[data-theme="bright"] {
+  --espresso: #1a1a1a;
+  --dark-roast: #333333;
+  --medium-roast: #555555;
+  --latte: #999999;
+  --cappuccino: #cccccc;
+  --cream: #ffffff;
+  --foam: #fafafa;
+  --beige: #f0f0f0;
+  --accent-warm: #ff6b6b;
+  --accent-cool: #4ecdc4;
+
+  /* Semantic Colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #f0f0f0;
+  --text-primary: #1a1a1a;
+  --text-secondary: #555555;
+  --text-light: #999999;
+  --success: #51cf66;
+  --warning: #ffd43b;
+  --danger: #ff6b6b;
+  --info: #4ecdc4;
+
+  /* Shadows & Effects */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+  --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.2);
+
+  /* Gradients */
+  --gradient-warm: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+  --gradient-coffee: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+  --gradient-sunset: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%);
+  --gradient-bg: linear-gradient(135deg, #ffffff 0%, #fafafa 50%, #f0f0f0 100%);
+
+  /* UI Elements */
+  --card-bg: rgba(255, 255, 255, 0.98);
+  --card-border: rgba(230, 230, 230, 0.8);
+  --input-bg: white;
+  --input-border: #e0e0e0;
+}
+
+/* Purple Theme (Royal Purple Palette) */
+[data-theme="purple"] {
+  --espresso: #3d1a5f;
+  --dark-roast: #5a2a7f;
+  --medium-roast: #7b3f9f;
+  --latte: #a66cc2;
+  --cappuccino: #c99ae0;
+  --cream: #f3e8fa;
+  --foam: #f8f3fc;
+  --beige: #e8d4f5;
+  --accent-warm: #e91e63;
+  --accent-cool: #673ab7;
+
+  /* Semantic Colors */
+  --bg-primary: #f8f3fc;
+  --bg-secondary: #e8d4f5;
+  --bg-tertiary: #c99ae0;
+  --text-primary: #3d1a5f;
+  --text-secondary: #5a2a7f;
+  --text-light: #a66cc2;
+  --success: #66bb6a;
+  --warning: #ffa726;
+  --danger: #ef5350;
+  --info: #ab47bc;
+
+  /* Shadows & Effects */
+  --shadow-sm: 0 2px 8px rgba(61, 26, 95, 0.08);
+  --shadow-md: 0 4px 16px rgba(61, 26, 95, 0.12);
+  --shadow-lg: 0 8px 32px rgba(61, 26, 95, 0.16);
+  --shadow-xl: 0 12px 48px rgba(61, 26, 95, 0.2);
+
+  /* Gradients */
+  --gradient-warm: linear-gradient(135deg, #f3e8fa 0%, #e8d4f5 100%);
+  --gradient-coffee: linear-gradient(135deg, #7b3f9f 0%, #5a2a7f 100%);
+  --gradient-sunset: linear-gradient(135deg, #e91e63 0%, #c99ae0 100%);
+  --gradient-bg: linear-gradient(135deg, #f8f3fc 0%, #e8d4f5 50%, #c99ae0 100%);
+
+  /* UI Elements */
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-border: rgba(255, 255, 255, 0.5);
+  --input-bg: white;
+  --input-border: #e8d4f5;
 }
 
 * {
@@ -43,7 +273,7 @@
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #faf7f2 0%, #e8dcc8 50%, #c9a882 100%);
+  background: var(--gradient-bg);
   background-attachment: fixed;
   min-height: 100vh;
   min-height: 100dvh; /* Dynamic viewport height for mobile */
@@ -51,6 +281,7 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 #root {
@@ -115,26 +346,28 @@ h4 { font-size: 1.25rem; font-weight: 600; }
 
 .btn-primary {
   background: var(--gradient-coffee);
-  color: var(--cream);
+  color: var(--text-primary);
   box-shadow: var(--shadow-md);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
+  filter: brightness(1.1);
 }
 
 .btn-secondary {
   background: linear-gradient(135deg, var(--latte) 0%, var(--cappuccino) 100%);
-  color: var(--espresso);
+  color: var(--text-primary);
   box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary:hover {
   background: linear-gradient(135deg, var(--medium-roast) 0%, var(--latte) 100%);
-  color: var(--cream);
+  color: var(--text-primary);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+  filter: brightness(1.1);
 }
 
 .btn-success {
@@ -177,12 +410,12 @@ h4 { font-size: 1.25rem; font-weight: 600; }
 
 /* Cards */
 .card {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg);
   backdrop-filter: blur(10px);
   border-radius: 16px;
   padding: 28px;
   box-shadow: var(--shadow-md);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--card-border);
   transition: all 0.3s ease;
 }
 
@@ -210,11 +443,11 @@ h4 { font-size: 1.25rem; font-weight: 600; }
 .form-select {
   width: 100%;
   padding: 14px 16px;
-  border: 2px solid var(--beige);
+  border: 2px solid var(--input-border);
   border-radius: 12px;
   font-size: 16px;
   font-family: 'Inter', sans-serif;
-  background: white;
+  background: var(--input-bg);
   transition: all 0.3s ease;
   color: var(--text-primary);
 }
@@ -241,13 +474,13 @@ h4 { font-size: 1.25rem; font-weight: 600; }
 /* Page Header */
 .page-header {
   text-align: center;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg);
   backdrop-filter: blur(10px);
   padding: 32px;
   border-radius: 20px;
   margin-bottom: 32px;
   box-shadow: var(--shadow-lg);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--card-border);
 }
 
 .page-title {
@@ -275,7 +508,7 @@ h4 { font-size: 1.25rem; font-weight: 600; }
 }
 
 .spinner {
-  border: 4px solid rgba(107, 68, 35, 0.1);
+  border: 4px solid var(--input-border);
   border-top: 4px solid var(--medium-roast);
   border-radius: 50%;
   width: 56px;
@@ -346,10 +579,7 @@ h4 { font-size: 1.25rem; font-weight: 600; }
 /* Responsive */
 @media (max-width: 768px) {
   .container {
-    paddingTop: 20px;
-    paddingRight: 16px;
-    paddingBottom: 20px;
-    paddingLeft: 16px;
+    padding: 20px 16px;
   }
 
   .page-header {
@@ -376,10 +606,7 @@ h4 { font-size: 1.25rem; font-weight: 600; }
 
 @media (max-width: 480px) {
   .container {
-    paddingTop: 16px;
-    paddingRight: 12px;
-    paddingBottom: 16px;
-    paddingLeft: 12px;
+    padding: 16px 12px;
   }
 
   .page-header {

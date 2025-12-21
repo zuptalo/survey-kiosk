@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { ConfigProvider } from './context/ConfigContext';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { useFullscreen } from './hooks/useFullscreen';
 import SplashScreen from './components/SplashScreen';
 import RequireInstallation from './components/RequireInstallation';
@@ -15,6 +16,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminNewSurvey from './pages/AdminNewSurvey';
 import AdminEditSurvey from './pages/AdminEditSurvey';
 import AdminResults from './pages/AdminResults';
+import AdminSettings from './pages/AdminSettings';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -100,26 +102,31 @@ function App() {
   // Force installation - show requirement screen if not running as PWA
   if (!isStandalone) {
     return (
-      <ConfigProvider>
-        <RequireInstallation />
-      </ConfigProvider>
+      <ThemeProvider>
+        <ConfigProvider>
+          <RequireInstallation />
+        </ConfigProvider>
+      </ThemeProvider>
     );
   }
 
   // Show splash on first load
   if (showSplash && !splashShown) {
     return (
-      <ConfigProvider>
-        <SplashScreen onComplete={handleSplashComplete} />
-      </ConfigProvider>
+      <ThemeProvider>
+        <ConfigProvider>
+          <SplashScreen onComplete={handleSplashComplete} />
+        </ConfigProvider>
+      </ThemeProvider>
     );
   }
 
   return (
-    <ConfigProvider>
-      <NotificationProvider>
-        <AuthProvider>
-          <Routes>
+    <ThemeProvider>
+      <ConfigProvider>
+        <NotificationProvider>
+          <AuthProvider>
+            <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/surveys" element={<SurveyList />} />
         <Route path="/survey/:id" element={<SurveyForm />} />
@@ -156,13 +163,22 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/settings"
+          element={
+            <ProtectedRoute>
+              <AdminSettings />
+            </ProtectedRoute>
+          }
+        />
         </Routes>
 
-          {/* Connectivity monitor - blocks app when offline */}
-          <ConnectivityMonitor />
-        </AuthProvider>
-      </NotificationProvider>
-    </ConfigProvider>
+            {/* Connectivity monitor - blocks app when offline */}
+            <ConnectivityMonitor />
+          </AuthProvider>
+        </NotificationProvider>
+      </ConfigProvider>
+    </ThemeProvider>
   );
 }
 
