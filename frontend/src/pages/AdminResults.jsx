@@ -268,7 +268,6 @@ function AdminResults() {
 const styles = {
   statsCard: {
     marginBottom: '24px',
-    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 247, 242, 0.95) 100%)',
   },
   statGrid: {
     display: 'grid',
@@ -280,7 +279,7 @@ const styles = {
     padding: '20px',
     background: 'var(--gradient-warm)',
     borderRadius: '12px',
-    border: '1px solid rgba(232, 220, 200, 0.5)',
+    border: '1px solid var(--card-border)',
     boxShadow: 'var(--shadow-sm)',
   },
   statLabel: {
@@ -293,12 +292,12 @@ const styles = {
   statValue: {
     fontSize: '36px',
     fontWeight: 'bold',
-    color: 'var(--espresso)',
+    color: 'var(--text-primary)',
     fontFamily: "'Poppins', sans-serif",
   },
   sectionTitle: {
     fontSize: '20px',
-    color: 'var(--espresso)',
+    color: 'var(--text-primary)',
     marginBottom: '24px',
     fontFamily: "'Poppins', sans-serif",
     fontWeight: '600',
@@ -306,7 +305,7 @@ const styles = {
   questionSection: {
     marginBottom: '40px',
     paddingBottom: '40px',
-    borderBottom: '2px solid rgba(232, 220, 200, 0.3)',
+    borderBottom: '2px solid var(--input-border)',
   },
   questionHeader: {
     display: 'flex',
@@ -318,7 +317,7 @@ const styles = {
   },
   questionTitle: {
     fontSize: '20px',
-    color: 'var(--espresso)',
+    color: 'var(--text-primary)',
     fontFamily: "'Poppins', sans-serif",
     fontWeight: '600',
     margin: 0,
@@ -330,7 +329,7 @@ const styles = {
     fontSize: '14px',
     color: 'var(--text-secondary)',
     fontWeight: '500',
-    border: '1px solid rgba(232, 220, 200, 0.5)',
+    border: '1px solid var(--card-border)',
   },
   noResponses: {
     color: 'var(--text-secondary)',
@@ -345,10 +344,10 @@ const styles = {
     marginBottom: '24px',
   },
   resultCard: {
-    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 247, 242, 0.95) 100%)',
+    background: 'var(--bg-secondary)',
     borderRadius: '16px',
     padding: '20px',
-    border: '1px solid rgba(232, 220, 200, 0.5)',
+    border: '1px solid var(--card-border)',
     boxShadow: 'var(--shadow-md)',
     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
   },
@@ -366,7 +365,7 @@ const styles = {
   cardTitle: {
     fontSize: '18px',
     fontWeight: '600',
-    color: 'var(--espresso)',
+    color: 'var(--text-primary)',
     fontFamily: "'Poppins', sans-serif",
     marginBottom: '12px',
     lineHeight: '1.4',
@@ -378,7 +377,7 @@ const styles = {
     marginBottom: '16px',
   },
   statItem: {
-    background: 'rgba(107, 68, 35, 0.05)',
+    background: 'var(--bg-tertiary)',
     borderRadius: '12px',
     padding: '12px',
     textAlign: 'center',
@@ -395,16 +394,16 @@ const styles = {
   cardStatValue: {
     fontSize: '24px',
     fontWeight: '700',
-    color: 'var(--espresso)',
+    color: 'var(--text-primary)',
     fontFamily: "'Poppins', sans-serif",
   },
   cardProgressBar: {
     width: '100%',
     height: '32px',
-    background: 'rgba(232, 220, 200, 0.4)',
+    background: 'var(--input-bg)',
     borderRadius: '16px',
     overflow: 'hidden',
-    border: '1px solid rgba(232, 220, 200, 0.6)',
+    border: '1px solid var(--input-border)',
   },
   cardProgressFill: {
     height: '100%',
@@ -426,7 +425,7 @@ const styles = {
   },
   popularTitle: {
     fontSize: '18px',
-    color: 'var(--espresso)',
+    color: 'var(--text-primary)',
     marginBottom: '20px',
     fontFamily: "'Poppins', sans-serif",
     fontWeight: '600',
@@ -442,10 +441,10 @@ const styles = {
     alignItems: 'center',
     gap: '12px',
     textAlign: 'center',
-    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 247, 242, 0.95) 100%)',
+    background: 'var(--bg-secondary)',
     borderRadius: '16px',
     padding: '20px',
-    border: '1px solid rgba(232, 220, 200, 0.5)',
+    border: '1px solid var(--card-border)',
     boxShadow: 'var(--shadow-md)',
     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
   },
@@ -460,7 +459,7 @@ const styles = {
   popularText: {
     fontSize: '24px',
     fontWeight: 'bold',
-    color: 'var(--espresso)',
+    color: 'var(--text-primary)',
     marginBottom: '8px',
     fontFamily: "'Poppins', sans-serif",
   },
