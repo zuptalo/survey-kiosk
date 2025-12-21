@@ -110,3 +110,56 @@ jobs:
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
           echo "docker pull ${{ secrets.DOCKER_USERNAME }}/survey-kiosk:${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Update Portainer Stack
+        if: steps.check-secrets.outputs.secrets_available == 'true' && vars.TR_STACK_ID != '' && vars.TR_ENDPOINT_ID != ''
+        env:
+          TR_BASE_URL: ${{ secrets.TR_BASE_URL }}
+          TR_ACCESS_TOKEN: ${{ secrets.TR_ACCESS_TOKEN }}
+          TR_STACK_ID: ${{ vars.TR_STACK_ID }}
+          TR_ENDPOINT_ID: ${{ vars.TR_ENDPOINT_ID }}
+          DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/survey-kiosk:${{ steps.version.outputs.version }}
+        run: |
+          echo "🔄 Updating Portainer stack..."
+
+          # Get current stack configuration
+          STACK_DATA=$(curl -s -X GET \
+            -H "X-API-Key: ${TR_ACCESS_TOKEN}" \
+            "${TR_BASE_URL}/api/stacks/${TR_STACK_ID}?endpointId=${TR_ENDPOINT_ID}")
+
+          # Extract current StackFileContent and update the image tag
+          UPDATED_CONTENT=$(echo "$STACK_DATA" | jq -r '.StackFileContent' | sed "s|image: .*survey-kiosk:.*|image: ${DOCKER_IMAGE}|g")
+
+          # Create the update payload
+          UPDATE_PAYLOAD=$(jq -n \
+            --arg id "${TR_STACK_ID}" \
+            --arg content "$UPDATED_CONTENT" \
+            '{
+              "id": ($id | tonumber),
+              "StackFileContent": $content,
+              "Env": [],
+              "Prune": false,
+              "PullImage": true
+            }')
+
+          # Update the stack
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT \
+            -H "X-API-Key: ${TR_ACCESS_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$UPDATE_PAYLOAD" \
+            "${TR_BASE_URL}/api/stacks/${TR_STACK_ID}?endpointId=${TR_ENDPOINT_ID}")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          RESPONSE_BODY=$(echo "$RESPONSE" | head -n-1)
+
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✅ Successfully updated Portainer stack to version ${{ steps.version.outputs.version }}"
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Deployment:** ✅ Portainer stack updated successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Failed to update Portainer stack (HTTP $HTTP_CODE)"
+            echo "Response: $RESPONSE_BODY"
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Deployment:** ⚠️ Failed to update Portainer stack (HTTP $HTTP_CODE)" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
