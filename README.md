@@ -433,9 +433,9 @@ docker volume inspect feedback-kiosk_survey-data
 
 ## CI/CD and Docker Registry
 
-### Automated Builds
+### Automated Builds and Deployment
 
-The project includes GitHub Actions that automatically build and push Docker images on every push to the `react-nodejs-implementation` branch.
+The project includes GitHub Actions that automatically build, push, and deploy Docker images on every push to the `react-nodejs-implementation` branch.
 
 **Multi-Architecture Support:**
 - Images are built for both `linux/amd64` (x86_64) and `linux/arm64` (ARM)
@@ -451,6 +451,11 @@ If these secrets are not configured, the workflow will skip the Docker build ste
 - Images are tagged with `react-YYYYMMDD-N` prefix (e.g., `react-20251210-1`)
 - The `react-latest` tag always points to the most recent build
 - Git tags are automatically created for each release
+
+**Automatic Deployment:**
+- When configured, the workflow automatically updates your Portainer stack with the new image
+- Zero-downtime deployment - Portainer pulls and redeploys the container
+- See `.github/DEPLOYMENT_SETUP.md` for configuration instructions
 
 **Using published images:**
 ```bash
